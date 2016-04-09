@@ -3,10 +3,14 @@ import requests
 from tornado import web
 from tornado import ioloop
 from pytube import YouTube
+from pyatom import AtomFeed
+from pyatom import FeedEntry
+from datetime import datetime
 
 
 class PlaylistHandler(web.RequestHandler):
     def get(self, playlist):
+        print('Playlist: {}'.format(playlist))
         self.add_header('Content-type', 'application/rss+xml')
         playlist = playlist.split('/')
         if len(playlist) < 2:
@@ -18,12 +22,12 @@ class PlaylistHandler(web.RequestHandler):
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
         response = request.json()
-        self.write('<?xml version="1.0" encoding="UTF-8"?>')
-        self.write('<rss><channel>')
-        self.write('<title>' + response['items'][0]['snippet']['title'] + '</title>')
-        self.write('<link>https://www.youtube.com/playlist?list=' + playlist[0] + '</link>')
-        self.write('<description>' + response['items'][0]['snippet']['description'] + '</description>')
-        self.write('<itunes:image href="' + response['items'][0]['snippet']['thumbnails']['default']['url'] + '"/>')
+        feed = AtomFeed(title=response['items'][0]['snippet']['title'],
+                        subtitle=response['items'][0]['snippet']['title'],
+                        feed_url=self.request.host + self.request.uri,
+                        url='https://www.youtube.com/playlist?list=' + playlist[0],
+                        author=response['items'][0]['snippet']['channelTitle'],
+                        icon=response['items'][0]['snippet']['thumbnails']['default']['url'])
         payload = {
             'part': 'snippet',
             'maxResults': 25,
@@ -32,28 +36,29 @@ class PlaylistHandler(web.RequestHandler):
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
         response = request.json()
+        feed.updated = datetime.strptime(response['items'][0]['snippet']['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
         for item in response['items']:
             snippet = item['snippet']
-            yt = YouTube('http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'])
-            self.write('<item>')
-            self.write('<title>' + snippet['title'] + '</title>')
-            self.write('<link>' + yt.url + '</link>')
-            self.write('<description>' + snippet['description'] + '</description>')
-            self.write('<pubDate>' + snippet['publishedAt'] + '</pubDate>')
-            self.write('<itunes:image>' + snippet['thumbnails']['default']['url'] + '</itunes:image>')
-            self.write('<enclosure url="http://{url}/{type}/{vid}" length="{len}" type="{vtype}" />'.format(
-                url=self.request.host,
-                type=playlist[1],
-                vid=yt.video_id,
-                len=8,
-                vtype='audio/mpeg' if playlist[1] == 'audio' else 'video/mp4'))
-            self.write('</item>')
-        self.finish('</channel></rss>')
+            entry = FeedEntry(title=snippet['title'],
+                              updated=datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ'),
+                              id=snippet['resourceId']['videoId'])
+            entry.author = [{'name': snippet['channelTitle']}]
+            entry.published = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            entry.links.append({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
+                                'title': snippet['title']})
+            entry.summary = snippet['description']
+            entry.url = 'http://{url}/{type}/{vid}'.format(url=self.request.host,
+                                                           type=playlist[1],
+                                                           vid=snippet['resourceId']['videoId'])
+            feed.add(entry)
+        for line in feed.generate():
+            self.write(line)
+        self.finish()
 
 
 class VideoHandler(web.RequestHandler):
     def get(self, video):
-        print(video)
+        print('Video: {}'.format(video))
         yt = YouTube('http://www.youtube.com/watch?v=' + video)
         vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
         self.redirect(vid.url)
