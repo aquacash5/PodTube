@@ -24,10 +24,12 @@ class PlaylistHandler(web.RequestHandler):
         response = request.json()
         feed = AtomFeed(title=response['items'][0]['snippet']['title'],
                         subtitle=response['items'][0]['snippet']['title'],
-                        feed_url=self.request.host + self.request.uri,
+                        feed_url='http://' + self.request.host + self.request.uri,
                         url='https://www.youtube.com/playlist?list=' + playlist[0],
                         author=response['items'][0]['snippet']['channelTitle'],
                         icon=response['items'][0]['snippet']['thumbnails']['default']['url'])
+        feed.title_type = 'text/plain'
+        feed.subtitle_type = 'text/plain'
         payload = {
             'part': 'snippet',
             'maxResults': 25,
@@ -41,15 +43,16 @@ class PlaylistHandler(web.RequestHandler):
             snippet = item['snippet']
             entry = FeedEntry(title=snippet['title'],
                               updated=datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-                              id=snippet['resourceId']['videoId'])
+                              id='http://{url}/{type}/{vid}'.format(url=self.request.host,
+                                                                    type=playlist[1],
+                                                                    vid=snippet['resourceId']['videoId']))
             entry.author = [{'name': snippet['channelTitle']}]
             entry.published = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
             entry.links.append({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
                                 'title': snippet['title']})
             entry.summary = snippet['description']
-            entry.url = 'http://{url}/{type}/{vid}'.format(url=self.request.host,
-                                                           type=playlist[1],
-                                                           vid=snippet['resourceId']['videoId'])
+            entry.summary_type = 'text/plain'
+            entry.title_type = 'text/plain'
             feed.add(entry)
         for line in feed.generate():
             self.write(line)
