@@ -18,7 +18,7 @@ class PlaylistHandler(web.RequestHandler):
         payload = {
             'part': 'snippet',
             'id': playlist[0],
-            'key': sys.argv[1]
+            'key': sys.argv[2]
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
         response = request.json()
@@ -75,5 +75,5 @@ def make_app():
 
 if __name__ == '__main__':
     app = make_app()
-    app.listen(8888)
+    app.listen(sys.argv[1])
     ioloop.IOLoop.current().start()
