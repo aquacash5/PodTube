@@ -42,18 +42,18 @@ class PlaylistHandler(web.RequestHandler):
         fg.updated(response['items'][0]['snippet']['publishedAt'])
         for item in response['items']:
             snippet = item['snippet']
-            entry = FeedEntry()
-            entry.title(snippet['title'])
-            entry.updated(snippet['publishedAt'])
-            entry.id('http://{url}/{type}/{vid}'.format(url=self.request.host,
-                                                        type=playlist[1],
-                                                        vid=snippet['resourceId']['videoId']))
-            entry.author({'name': snippet['channelTitle']})
-            entry.pubdate(snippet['publishedAt'])
-            entry.link({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
-                        'title': snippet['title']})
-            entry.summary(snippet['description'])
-            fg.add_entry(entry)
+            fe = FeedEntry()
+            fe.title(snippet['title'])
+            fe.updated(snippet['publishedAt'])
+            fe.id('http://{url}/{type}/{vid}'.format(url=self.request.host,
+                                                     type=playlist[1],
+                                                     vid=snippet['resourceId']['videoId']))
+            fe.author({'name': snippet['channelTitle']})
+            fe.pubdate(snippet['publishedAt'])
+            fe.link({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
+                     'title': snippet['title']})
+            fe.summary(snippet['description'])
+            fg.add_entry(fe)
         self.write(fg.rss_str())
         self.finish()
 
