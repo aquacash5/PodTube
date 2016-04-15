@@ -25,17 +25,18 @@ class PlaylistHandler(web.RequestHandler):
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
         response = request.json()
         fg = FeedGenerator()
-
         fg.title(response['items'][0]['snippet']['title'])
         fg.subtitle(response['items'][0]['snippet']['title'])
         fg.id('http://' + self.request.host + self.request.uri)
-        fg.author({'name': response['items'][0]['snippet']['channelTitle']})
+        fg.author(name=response['items'][0]['snippet']['channelTitle'])
         fg.icon(response['items'][0]['snippet']['thumbnails']['default']['url'])
+        fg.link(href='https://www.youtube.com/playlist?list=' + playlist[0])
+        fg.author()
         payload = {
             'part': 'snippet',
             'maxResults': 25,
             'playlistId': playlist[0],
-            'key': sys.argv[1]
+            'key': sys.argv[2]
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
         response = request.json()
@@ -44,14 +45,15 @@ class PlaylistHandler(web.RequestHandler):
             snippet = item['snippet']
             fe = FeedEntry()
             fe.title(snippet['title'])
+            fe.id('http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'])
             fe.updated(snippet['publishedAt'])
-            fe.id('http://{url}/{type}/{vid}'.format(url=self.request.host,
-                                                     type=playlist[1],
-                                                     vid=snippet['resourceId']['videoId']))
-            fe.author({'name': snippet['channelTitle']})
+            fe.enclosure(url='http://{url}/{type}/{vid}'.format(url=self.request.host,
+                                                                type=playlist[1],
+                                                                vid=snippet['resourceId']['videoId']),
+                         type="video/mp4")
+            fe.author(name=snippet['channelTitle'])
             fe.pubdate(snippet['publishedAt'])
-            fe.link({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
-                     'title': snippet['title']})
+            fe.link(href='http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'], title=snippet['title'])
             fe.summary(snippet['description'])
             fg.add_entry(fe)
         self.write(fg.rss_str())
