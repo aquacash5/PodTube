@@ -1,11 +1,13 @@
 import sys
 import requests
+
 from tornado import web
 from tornado import ioloop
+
 from pytube import YouTube
-from pyatom import AtomFeed
-from pyatom import FeedEntry
-from datetime import datetime
+
+from feedgen.feed import FeedEntry
+from feedgen.feed import FeedGenerator
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -22,14 +24,13 @@ class PlaylistHandler(web.RequestHandler):
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
         response = request.json()
-        feed = AtomFeed(title=response['items'][0]['snippet']['title'],
-                        subtitle=response['items'][0]['snippet']['title'],
-                        feed_url='http://' + self.request.host + self.request.uri,
-                        url='https://www.youtube.com/playlist?list=' + playlist[0],
-                        author=response['items'][0]['snippet']['channelTitle'],
-                        icon=response['items'][0]['snippet']['thumbnails']['default']['url'])
-        feed.title_type = 'text/plain'
-        feed.subtitle_type = 'text/plain'
+        fg = FeedGenerator()
+
+        fg.title(response['items'][0]['snippet']['title'])
+        fg.subtitle(response['items'][0]['snippet']['title'])
+        fg.id('http://' + self.request.host + self.request.uri)
+        fg.author({'name': response['items'][0]['snippet']['channelTitle']})
+        fg.icon(response['items'][0]['snippet']['thumbnails']['default']['url'])
         payload = {
             'part': 'snippet',
             'maxResults': 25,
@@ -38,24 +39,22 @@ class PlaylistHandler(web.RequestHandler):
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
         response = request.json()
-        feed.updated = datetime.strptime(response['items'][0]['snippet']['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        fg.updated(response['items'][0]['snippet']['publishedAt'])
         for item in response['items']:
             snippet = item['snippet']
-            entry = FeedEntry(title=snippet['title'],
-                              updated=datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-                              id='http://{url}/{type}/{vid}'.format(url=self.request.host,
-                                                                    type=playlist[1],
-                                                                    vid=snippet['resourceId']['videoId']))
-            entry.author = [{'name': snippet['channelTitle']}]
-            entry.published = datetime.strptime(snippet['publishedAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            entry.links.append({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
-                                'title': snippet['title']})
-            entry.summary = snippet['description']
-            entry.summary_type = 'text/plain'
-            entry.title_type = 'text/plain'
-            feed.add(entry)
-        for line in feed.generate():
-            self.write(line)
+            entry = FeedEntry()
+            entry.title(snippet['title'])
+            entry.updated(snippet['publishedAt'])
+            entry.id('http://{url}/{type}/{vid}'.format(url=self.request.host,
+                                                        type=playlist[1],
+                                                        vid=snippet['resourceId']['videoId']))
+            entry.author({'name': snippet['channelTitle']})
+            entry.pubdate(snippet['publishedAt'])
+            entry.link({'href': 'http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'],
+                        'title': snippet['title']})
+            entry.summary(snippet['description'])
+            fg.add_entry(entry)
+        self.write(fg.rss_str())
         self.finish()
 
 
