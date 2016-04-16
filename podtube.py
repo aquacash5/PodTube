@@ -44,7 +44,7 @@ class PlaylistHandler(web.RequestHandler):
             snippet = item['snippet']
             fe = fg.add_entry()
             fe.title(snippet['title'])
-            fe.id('http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'])
+            fe.id(snippet['resourceId']['videoId'])
             fe.updated(snippet['publishedAt'])
             fe.enclosure(url='http://{url}/{type}/{vid}'.format(url=self.request.host,
                                                                 type=playlist[1],
