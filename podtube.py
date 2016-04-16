@@ -6,7 +6,6 @@ from tornado import ioloop
 
 from pytube import YouTube
 
-from feedgen.feed import FeedEntry
 from feedgen.feed import FeedGenerator
 
 
@@ -43,7 +42,7 @@ class PlaylistHandler(web.RequestHandler):
         fg.updated(response['items'][0]['snippet']['publishedAt'])
         for item in response['items']:
             snippet = item['snippet']
-            fe = FeedEntry()
+            fe = fg.add_entry()
             fe.title(snippet['title'])
             fe.id('http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'])
             fe.updated(snippet['publishedAt'])
