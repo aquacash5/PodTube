@@ -28,7 +28,7 @@ class PlaylistHandler(web.RequestHandler):
             logging.debug('Downloaded Playlist Information')
         else:
             logging.error('Error Downloading Playlist: %s', request.reason)
-            self.send_error('Error Downloading Playlist')
+            self.send_error(reason='Error Downloading Playlist')
             return
         fg = FeedGenerator()
         fg.title(response['items'][0]['snippet']['title'])
