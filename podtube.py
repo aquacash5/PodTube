@@ -68,7 +68,6 @@ class PlaylistHandler(web.RequestHandler):
             fe.pubdate(snippet['publishedAt'])
             fe.link(href='http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'], title=snippet['title'])
             fe.summary(snippet['description'])
-            fg.add_entry(fe)
         self.write(fg.rss_str())
         self.finish()
 
