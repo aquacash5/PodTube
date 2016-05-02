@@ -102,7 +102,7 @@ class AudioHandler(web.RequestHandler):
         with process.Subprocess(
                 ['ffmpeg', '-i', '{}'.format(vid.url), '-q:a', '0', '-map', 'a', '-f', audio[1], 'pipe:'],
                 stdout=process.Subprocess.STREAM) as proc:
-            yield proc.stdout.read_bytes(1024, partial=True)
+            yield proc.stdout.read_bytes(2**8, streaming_callback=self.on_chunk, partial=True)
         self.finish()
 
     def on_chunk(self, chunk):
