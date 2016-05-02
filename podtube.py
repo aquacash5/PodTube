@@ -100,15 +100,21 @@ class AudioHandler(web.RequestHandler):
         yt = YouTube('http://www.youtube.com/watch?v=' + audio[0])
         vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
         with process.Subprocess(
-                ['ffmpeg', '-i', '{}'.format(vid.url), '-q:a', '0', '-map', 'a', '-f', audio[1], 'pipe:'],
+                ['ffmpeg',
+                 '-loglevel', 'panic',
+                 '-i', '{}'.format(vid.url),
+                 '-q:a', '0',
+                 '-map', 'a',
+                 '-f', audio[1], 'pipe:'],
                 stdout=process.Subprocess.STREAM) as proc:
-            yield proc.stdout.read_bytes(2**8, streaming_callback=self.on_chunk, partial=True)
-        self.finish()
+            proc.stdout.read_until_close(streaming_callback=self.on_chunk)
 
     def on_chunk(self, chunk):
         if chunk:
             self.write(chunk)
             self.flush()
+        else:
+            self.finish()
 
 
 def make_app():
