@@ -3,7 +3,9 @@ import logging
 import requests
 
 from tornado import web
+from tornado import gen
 from tornado import ioloop
+from tornado import process
 
 from pytube import YouTube
 
@@ -60,10 +62,14 @@ class PlaylistHandler(web.RequestHandler):
             fe.title(snippet['title'])
             fe.id(snippet['resourceId']['videoId'])
             fe.updated(snippet['publishedAt'])
-            fe.enclosure(url='http://{url}/{type}/{vid}'.format(url=self.request.host,
-                                                                type=playlist[1],
-                                                                vid=snippet['resourceId']['videoId']),
-                         type="video/mp4")
+            if playlist[1] == 'video':
+                fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
+                                                                   vid=snippet['resourceId']['videoId']),
+                             type="video/mp4")
+            elif playlist[1] == 'audio':
+                fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host,
+                                                                   vid=snippet['resourceId']['videoId']),
+                             type="audio/mpeg")
             fe.author(name=snippet['channelTitle'])
             fe.pubdate(snippet['publishedAt'])
             fe.link(href='http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'], title=snippet['title'])
@@ -75,15 +81,41 @@ class PlaylistHandler(web.RequestHandler):
 class VideoHandler(web.RequestHandler):
     def get(self, video):
         logging.info('Video: %s'.format(video))
-        yt = YouTube('http://www.youtube.com/watch?v=' + video)
-        vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        video = video.split('.')
+        if len(video) < 2:
+            video.append('mp4')
+        yt = YouTube('http://www.youtube.com/watch?v=' + video[0])
+        vid = sorted(yt.filter(video[1]), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
         self.redirect(vid.url)
+
+
+class AudioHandler(web.RequestHandler):
+    @web.asynchronous
+    @gen.coroutine
+    def get(self, audio):
+        logging.info('Audio: %s'.format(audio))
+        audio = audio.split('.')
+        if len(audio) < 2:
+            audio.append('mp3')
+        yt = YouTube('http://www.youtube.com/watch?v=' + audio[0])
+        vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        with process.Subprocess(
+                ['ffmpeg', '-i', '"{}"'.format(vid.url), '-q:a', '0', '-map', 'a', '-f', audio[1], 'pipe:'],
+                stdout=process.Subprocess.STREAM) as proc:
+            yield proc.read_bytes(1024, partial=True)
+        self.finish()
+
+    def on_chunk(self, chunk):
+        if chunk:
+            self.write(chunk)
+            self.flush()
 
 
 def make_app():
     return web.Application([
         (r'/playlist/(.*)', PlaylistHandler),
-        (r'/video/(.*)', VideoHandler)
+        (r'/video/(.*)', VideoHandler),
+        (r'/audio/(.*)', AudioHandler)
     ])
 
 if __name__ == '__main__':
