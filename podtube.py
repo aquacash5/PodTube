@@ -108,7 +108,7 @@ class AudioHandler(web.RequestHandler):
              '-f', audio[1], 'pipe:'],
             stdout=process.Subprocess.STREAM)
         proc.stdout.read_until_close(streaming_callback=self.on_chunk)
-        proc.wait_for_exit()
+        yield proc.wait_for_exit()
 
     def on_chunk(self, chunk):
         if chunk:
