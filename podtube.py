@@ -101,8 +101,9 @@ class AudioHandler(web.RequestHandler):
         self.finish()
 
     def on_chunk(self, chunk):
-        self.write(chunk)
-        self.flush()
+        if chunk:
+            self.write(chunk)
+            self.flush()
 
 
 def make_app():
