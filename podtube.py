@@ -93,6 +93,7 @@ class AudioHandler(web.RequestHandler):
         logging.info('Audio: %s'.format(audio))
         yt = YouTube('http://www.youtube.com/watch?v=' + audio)
         vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        self.add_header('Content-Type', 'audio/mpeg')
         ffmpeg = ['ffmpeg', '-loglevel', 'panic', '-i', vid.url, '-q:a', '0', '-map', 'a', '-f', 'mp3', 'pipe:']
         with process.Subprocess(ffmpeg, stdout=process.Subprocess.STREAM) as proc:
             proc.stdout.read_until_close(streaming_callback=self.on_chunk)
