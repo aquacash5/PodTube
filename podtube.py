@@ -81,11 +81,8 @@ class PlaylistHandler(web.RequestHandler):
 class VideoHandler(web.RequestHandler):
     def get(self, video):
         logging.info('Video: %s'.format(video))
-        video = video.split('.')
-        if len(video) < 2:
-            video.append('mp4')
-        yt = YouTube('http://www.youtube.com/watch?v=' + video[0])
-        vid = sorted(yt.filter(video[1]), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        yt = YouTube('http://www.youtube.com/watch?v=' + video)
+        vid = sorted(yt.filter(video), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
         self.redirect(vid.url)
 
 
@@ -94,28 +91,17 @@ class AudioHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, audio):
         logging.info('Audio: %s'.format(audio))
-        audio = audio.split('.')
-        if len(audio) < 2:
-            audio.append('mp3')
-        yt = YouTube('http://www.youtube.com/watch?v=' + audio[0])
+        yt = YouTube('http://www.youtube.com/watch?v=' + audio)
         vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
-        proc = process.Subprocess(
-            ['ffmpeg',
-             '-loglevel', 'panic',
-             '-i', '{}'.format(vid.url),
-             '-q:a', '0',
-             '-map', 'a',
-             '-f', audio[1], 'pipe:'],
-            stdout=process.Subprocess.STREAM)
-        proc.stdout.read_until_close(streaming_callback=self.on_chunk)
-        yield proc.wait_for_exit()
+        ffmpeg = ['ffmpeg', '-loglevel', 'panic', '-i', vid.url, '-q:a', '0', '-map', 'a', '-f', 'mp3', 'pipe:']
+        with process.Subprocess(ffmpeg, stdout=process.Subprocess.STREAM) as proc:
+            proc.stdout.read_until_close(streaming_callback=self.on_chunk)
+            yield proc.wait_for_exit()
+        self.finish()
 
     def on_chunk(self, chunk):
-        if chunk:
-            self.write(chunk)
-            self.flush()
-        else:
-            self.finish()
+        self.write(chunk)
+        self.flush()
 
 
 def make_app():
