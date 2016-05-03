@@ -1,6 +1,9 @@
 import sys
 import logging
 import requests
+from argparse import ArgumentParser
+
+import misaka
 
 from tornado import web
 from tornado import gen
@@ -10,6 +13,8 @@ from tornado import process
 from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
+
+key = None
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -106,14 +111,31 @@ class AudioHandler(web.RequestHandler):
             self.flush()
 
 
+class FileHandler(web.RequestHandler):
+    def get(self):
+        with open('README.md') as text:
+            self.write(misaka.html(text.read(), extensions=['tables']))
+
+
 def make_app():
     return web.Application([
         (r'/playlist/(.*)', PlaylistHandler),
         (r'/video/(.*)', VideoHandler),
-        (r'/audio/(.*)', AudioHandler)
+        (r'/audio/(.*)', AudioHandler),
+        (r'/', FileHandler)
     ])
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('key',
+                        help='Google\'s API Key')
+    parser.add_argument('port',
+                        help='Port Number to listen on',
+                        type=int,
+                        default=80,
+                        nargs='?')
+    args = parser.parse_args()
+    key = args.key
     app = make_app()
-    app.listen(sys.argv[1])
+    app.listen(args.port)
     ioloop.IOLoop.current().start()
