@@ -1,4 +1,3 @@
-import sys
 import logging
 import requests
 from argparse import ArgumentParser
@@ -27,7 +26,7 @@ class PlaylistHandler(web.RequestHandler):
         payload = {
             'part': 'snippet',
             'id': playlist[0],
-            'key': sys.argv[2]
+            'key': key
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
         response = request.json()
@@ -49,7 +48,7 @@ class PlaylistHandler(web.RequestHandler):
             'part': 'snippet',
             'maxResults': 25,
             'playlistId': playlist[0],
-            'key': sys.argv[2]
+            'key': key
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
         response = request.json()
