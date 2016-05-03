@@ -95,9 +95,9 @@ class AudioHandler(web.RequestHandler):
         vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
         self.add_header('Content-Type', 'audio/mpeg')
         ffmpeg = ['ffmpeg', '-loglevel', 'panic', '-i', vid.url, '-q:a', '0', '-map', 'a', '-f', 'mp3', 'pipe:']
-        with process.Subprocess(ffmpeg, stdout=process.Subprocess.STREAM) as proc:
-            proc.stdout.read_until_close(streaming_callback=self.on_chunk)
-            yield proc.wait_for_exit()
+        proc = process.Subprocess(ffmpeg, stdout=process.Subprocess.STREAM)
+        proc.stdout.read_until_close(streaming_callback=self.on_chunk)
+        yield proc.wait_for_exit()
         self.finish()
 
     def on_chunk(self, chunk):
