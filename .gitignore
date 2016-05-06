@@ -115,3 +115,6 @@ ENV/
 .ropeproject
 
 # Created by .ignore support plugin (hsz.mobi)
+
+*.temp
+*.mp3

@@ -1,3 +1,4 @@
+import os
 import logging
 import requests
 from argparse import ArgumentParser
@@ -14,9 +15,20 @@ from pytube import YouTube
 from feedgen.feed import FeedGenerator
 
 key = None
+downloads = {}
+
+def get_youtube_url(video):
+    yt = YouTube('http://www.youtube.com/watch?v=' + video)
+    return sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+
+def touch(fname, mode=0o666):
+    flags = os.O_CREAT | os.O_APPEND
+    with os.fdopen(os.open(fname, flags=flags, mode=mode)):
+        pass
 
 
 class PlaylistHandler(web.RequestHandler):
+    @gen.coroutine
     def get(self, playlist):
         logging.info('Playlist: %s', playlist)
         self.add_header('Content-type', 'application/rss+xml')
@@ -59,55 +71,90 @@ class PlaylistHandler(web.RequestHandler):
             self.send_error(reason='Error Downloading Playlist Items')
             return
         fg.updated(response['items'][0]['snippet']['publishedAt'])
+        video = ''
         for item in response['items']:
             snippet = item['snippet']
-            logging.debug('PlaylistVideo: %s %s', snippet['resourceId']['videoId'], snippet['title'])
+            video = snippet['resourceId']['videoId']
+            logging.debug('PlaylistVideo: %s %s', video, snippet['title'])
             fe = fg.add_entry()
             fe.title(snippet['title'])
-            fe.id(snippet['resourceId']['videoId'])
+            fe.id(video)
             fe.updated(snippet['publishedAt'])
             if playlist[1] == 'video':
                 fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
-                                                                   vid=snippet['resourceId']['videoId']),
+                                                                   vid=video),
                              type="video/mp4")
             elif playlist[1] == 'audio':
                 fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host,
-                                                                   vid=snippet['resourceId']['videoId']),
+                                                                   vid=video),
                              type="audio/mpeg")
             fe.author(name=snippet['channelTitle'])
             fe.pubdate(snippet['publishedAt'])
-            fe.link(href='http://www.youtube.com/watch?v=' + snippet['resourceId']['videoId'], title=snippet['title'])
+            fe.link(href='http://www.youtube.com/watch?v=' + video, title=snippet['title'])
             fe.summary(snippet['description'])
         self.write(fg.rss_str())
         self.finish()
+        if playlist[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
+            touch(video + '.mp3.temp')
+            vid = get_youtube_url(video)
+            proc = process.Subprocess(['ffmpeg',
+                                       '-loglevel', 'panic',
+                                       '-y',
+                                       '-i', vid.url,
+                                       '-f', 'mp3', video + '.mp3.temp'])
+            try:
+                yield proc.wait_for_exit()
+                os.rename(video + '.mp3.temp', video + '.mp3')
+            except Exception:
+                os.remove(video + '.mp3.temp')
 
 
 class VideoHandler(web.RequestHandler):
     def get(self, video):
         logging.info('Video: %s'.format(video))
-        yt = YouTube('http://www.youtube.com/watch?v=' + video)
-        vid = sorted(yt.filter(video), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        vid = get_youtube_url(video)
         self.redirect(vid.url)
 
 
 class AudioHandler(web.RequestHandler):
-    @web.asynchronous
     @gen.coroutine
     def get(self, audio):
+        self.closed = False
         logging.info('Audio: %s'.format(audio))
-        yt = YouTube('http://www.youtube.com/watch?v=' + audio)
-        vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+        file = '{}.mp3'.format(audio)
+        if os.path.exists(file):
+            self.send_file(file)
+            return
+        vid = get_youtube_url(audio)
+        if not os.path.exists(file + '.temp'):
+            touch(file + '.temp')
+            proc = process.Subprocess(['ffmpeg',
+                                       '-loglevel', 'panic',
+                                       '-y',
+                                       '-i', vid.url,
+                                       '-f', 'mp3', file + '.temp'])
+            yield proc.wait_for_exit()
+            os.rename(file + '.temp', file)
+        else:
+            while os.path.exists(file + '.temp') and not self.closed:
+                yield gen.sleep(0.5)
+        if self.closed:
+            return
+        self.send_file(file)
+
+    def send_file(self, file):
         self.add_header('Content-Type', 'audio/mpeg')
-        ffmpeg = ['ffmpeg', '-loglevel', 'panic', '-i', vid.url, '-q:a', '0', '-map', 'a', '-f', 'mp3', 'pipe:']
-        proc = process.Subprocess(ffmpeg, stdout=process.Subprocess.STREAM)
+        self.add_header('Content-Length', os.stat(file).st_size)
+        proc = process.Subprocess(['cat', file], stdout=process.Subprocess.STREAM)
         proc.stdout.read_until_close(streaming_callback=self.on_chunk)
         yield proc.wait_for_exit()
-        self.finish()
 
     def on_chunk(self, chunk):
-        if chunk:
-            self.write(chunk)
-            self.flush()
+        self.write(chunk)
+        self.flush()
+
+    def on_connection_close(self):
+        self.closed = True
 
 
 class FileHandler(web.RequestHandler):
