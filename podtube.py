@@ -145,13 +145,8 @@ class AudioHandler(web.RequestHandler):
     def send_file(self, file):
         self.add_header('Content-Type', 'audio/mpeg')
         self.add_header('Content-Length', os.stat(file).st_size)
-        proc = process.Subprocess(['cat', file], stdout=process.Subprocess.STREAM)
-        proc.stdout.read_until_close(streaming_callback=self.on_chunk)
-        yield proc.wait_for_exit()
-
-    def on_chunk(self, chunk):
-        self.write(chunk)
-        self.flush()
+        with open(file) as f:
+            self.write(f.read())
 
     def on_connection_close(self):
         self.closed = True
