@@ -71,26 +71,26 @@ class PlaylistHandler(web.RequestHandler):
             self.send_error(reason='Error Downloading Playlist Items')
             return
         fg.updated(response['items'][0]['snippet']['publishedAt'])
-        video = ''
+        video = response['items'][0]['snippet']['resourceId']['videoId']
         for item in response['items']:
             snippet = item['snippet']
-            video = snippet['resourceId']['videoId']
-            logging.debug('PlaylistVideo: %s %s', video, snippet['title'])
+            curvideo = snippet['resourceId']['videoId']
+            logging.debug('PlaylistVideo: %s %s', curvideo, snippet['title'])
             fe = fg.add_entry()
             fe.title(snippet['title'])
-            fe.id(video)
+            fe.id(curvideo)
             fe.updated(snippet['publishedAt'])
             if playlist[1] == 'video':
                 fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
-                                                                   vid=video),
+                                                                   vid=curvideo),
                              type="video/mp4")
             elif playlist[1] == 'audio':
                 fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host,
-                                                                   vid=video),
+                                                                   vid=curvideo),
                              type="audio/mpeg")
             fe.author(name=snippet['channelTitle'])
             fe.pubdate(snippet['publishedAt'])
-            fe.link(href='http://www.youtube.com/watch?v=' + video, title=snippet['title'])
+            fe.link(href='http://www.youtube.com/watch?v=' + curvideo, title=snippet['title'])
             fe.summary(snippet['description'])
         self.write(fg.rss_str())
         self.finish()
@@ -125,20 +125,23 @@ class AudioHandler(web.RequestHandler):
         if os.path.exists(file):
             self.send_file(file)
             return
-        vid = get_youtube_url(audio)
         if not os.path.exists(file + '.temp'):
             touch(file + '.temp')
+            vid = get_youtube_url(audio)
             proc = process.Subprocess(['ffmpeg',
                                        '-loglevel', 'panic',
                                        '-y',
                                        '-i', vid.url,
                                        '-f', 'mp3', file + '.temp'])
-            yield proc.wait_for_exit()
-            os.rename(file + '.temp', file)
+            try:
+                yield proc.wait_for_exit()
+                os.rename(file + '.temp', file)
+            except Exception:
+                os.remove(file + '.temp')
         else:
             while os.path.exists(file + '.temp') and not self.closed:
                 yield gen.sleep(0.5)
-        if self.closed:
+        if self.closed or not os.path.exists(file):
             return
         self.send_file(file)
 
