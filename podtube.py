@@ -145,7 +145,7 @@ class AudioHandler(web.RequestHandler):
     def send_file(self, file):
         self.add_header('Content-Type', 'audio/mpeg')
         self.add_header('Content-Length', os.stat(file).st_size)
-        with open(file) as f:
+        with open(file, 'rb') as f:
             self.write(f.read())
 
     def on_connection_close(self):
