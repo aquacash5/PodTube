@@ -14,7 +14,7 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 key = None
 downloads = {}
 
