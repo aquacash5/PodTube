@@ -18,9 +18,11 @@ logging.basicConfig(level=logging.INFO)
 key = None
 downloads = {}
 
+
 def get_youtube_url(video):
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
     return sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+
 
 def touch(fname, mode=0o666):
     flags = os.O_CREAT | os.O_APPEND
