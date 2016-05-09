@@ -52,13 +52,17 @@ class PlaylistHandler(web.RequestHandler):
             self.send_error(reason='Error Downloading Playlist')
             return
         fg = FeedGenerator()
-        fg.title(response['items'][0]['snippet']['title'])
-        fg.subtitle(response['items'][0]['snippet']['title'])
+        fg.load_extension('podcast')
+        snippet = response['items'][0]['snippet']
+        icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+        fg.title(snippet['title'])
         fg.id('http://' + self.request.host + self.request.uri)
-        fg.author(name=response['items'][0]['snippet']['channelTitle'])
-        fg.icon(response['items'][0]['snippet']['thumbnails']['default']['url'])
+        fg.description(snippet['description'] or ' ')
+        fg.author(name=snippet['channelTitle'])
+        fg.image(snippet['thumbnails'][icon]['url'])
         fg.link(href='https://www.youtube.com/playlist?list=' + playlist[0])
-        fg.author()
+        fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
+        fg.podcast.itunes_summary(snippet['description'])
         payload = {
             'part': 'snippet',
             'maxResults': 25,
@@ -82,6 +86,8 @@ class PlaylistHandler(web.RequestHandler):
             fe = fg.add_entry()
             fe.title(snippet['title'])
             fe.id(curvideo)
+            icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+            fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
             fe.updated(snippet['publishedAt'])
             if playlist[1] == 'video':
                 fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
@@ -92,9 +98,12 @@ class PlaylistHandler(web.RequestHandler):
                                                                    vid=curvideo),
                              type="audio/mpeg")
             fe.author(name=snippet['channelTitle'])
+            fe.podcast.itunes_author(snippet['channelTitle'])
+            fe.podcast.itunes_author(snippet['channelTitle'])
             fe.pubdate(snippet['publishedAt'])
             fe.link(href='http://www.youtube.com/watch?v=' + curvideo, title=snippet['title'])
-            fe.summary(snippet['description'])
+            fe.podcast.itunes_summary(snippet['description'])
+            fe.description(snippet['description'])
         self.write(fg.rss_str())
         self.finish()
         if playlist[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
