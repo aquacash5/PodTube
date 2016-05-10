@@ -1,6 +1,7 @@
 import os
 import logging
 import requests
+import datetime
 from argparse import ArgumentParser
 
 import misaka
@@ -16,12 +17,22 @@ from feedgen.feed import FeedGenerator
 
 logging.basicConfig(level=logging.INFO)
 key = None
-downloads = {}
+video_links = {}
+feed_list = {}
 
 
 def get_youtube_url(video):
+    if video in video_links and video_links[video]['expire'] > datetime.datetime.now():
+        return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
-    return sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0]
+    vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
+    parts = {}
+    for part in vid.split('?')[-1].split('&'):
+        part = part.split('=')
+        parts[part[0]] = part[1]
+    link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
+    video_links[video] = link
+    return link['url']
 
 
 def touch(fname, mode=0o666):
@@ -34,10 +45,15 @@ class PlaylistHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, playlist):
         logging.info('Playlist: %s', playlist)
-        self.add_header('Content-type', 'application/rss+xml')
         playlist = playlist.split('/')
         if len(playlist) < 2:
             playlist.append('video')
+        playlist_name = '/'.join(playlist)
+        self.add_header('Content-type', 'application/rss+xml')
+        if playlist_name in feed_list and feed_list[playlist_name]['expire'] > datetime.datetime.now():
+            self.write(feed_list[playlist_name]['feed'])
+            self.finish()
+            return
         payload = {
             'part': 'snippet',
             'id': playlist[0],
@@ -104,15 +120,16 @@ class PlaylistHandler(web.RequestHandler):
             fe.link(href='http://www.youtube.com/watch?v=' + curvideo, title=snippet['title'])
             fe.podcast.itunes_summary(snippet['description'])
             fe.description(snippet['description'])
-        self.write(fg.rss_str())
+        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(minutes=120)}
+        feed_list[playlist_name] = feed
+        self.write(feed['feed'])
         self.finish()
         if playlist[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
             touch(video + '.mp3.temp')
-            vid = get_youtube_url(video)
             proc = process.Subprocess(['ffmpeg',
                                        '-loglevel', 'panic',
                                        '-y',
-                                       '-i', vid.url,
+                                       '-i', get_youtube_url(video),
                                        '-f', 'mp3', video + '.mp3.temp'])
             try:
                 yield proc.wait_for_exit()
@@ -124,8 +141,7 @@ class PlaylistHandler(web.RequestHandler):
 class VideoHandler(web.RequestHandler):
     def get(self, video):
         logging.info('Video: %s'.format(video))
-        vid = get_youtube_url(video)
-        self.redirect(vid.url)
+        self.redirect(get_youtube_url(video))
 
 
 class AudioHandler(web.RequestHandler):
@@ -139,11 +155,10 @@ class AudioHandler(web.RequestHandler):
             return
         if not os.path.exists(file + '.temp'):
             touch(file + '.temp')
-            vid = get_youtube_url(audio)
             proc = process.Subprocess(['ffmpeg',
                                        '-loglevel', 'panic',
                                        '-y',
-                                       '-i', vid.url,
+                                       '-i', get_youtube_url(audio),
                                        '-f', 'mp3', file + '.temp'])
             try:
                 yield proc.wait_for_exit()
