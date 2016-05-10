@@ -16,7 +16,7 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', filename='podtube.log', filemode='a')
 key = None
 video_links = {}
 playlist_feed = {}
