@@ -158,8 +158,8 @@ class PlaylistHandler(web.RequestHandler):
             playlist.append('video')
         playlist_name = '/'.join(playlist)
         self.add_header('Content-type', 'application/rss+xml')
-        if playlist_name in feed_list and feed_list[playlist_name]['expire'] > datetime.datetime.now():
-            self.write(feed_list[playlist_name]['feed'])
+        if playlist_name in playlist_feed and playlist_feed[playlist_name]['expire'] > datetime.datetime.now():
+            self.write(playlist_feed[playlist_name]['feed'])
             self.finish()
             return
         payload = {
@@ -229,7 +229,7 @@ class PlaylistHandler(web.RequestHandler):
             fe.podcast.itunes_summary(snippet['description'])
             fe.description(snippet['description'])
         feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(minutes=120)}
-        feed_list[playlist_name] = feed
+        playlist_feed[playlist_name] = feed
         self.write(feed['feed'])
         self.finish()
         if playlist[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
