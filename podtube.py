@@ -256,7 +256,7 @@ class AudioHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, audio):
         self.closed = False
-        logging.info('Audio: %s'.format(audio))
+        logging.info('Audio: %s', audio)
         file = '{}.mp3'.format(audio)
         if os.path.exists(file):
             self.send_file(file)
