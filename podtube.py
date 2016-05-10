@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 import requests
 import datetime
@@ -337,6 +338,8 @@ if __name__ == '__main__':
                         nargs='?')
     args = parser.parse_args()
     key = args.key
+    for file in glob.glob('*.temp'):
+        os.remove(file)
     app = make_app()
     app.listen(args.port)
     ioloop.PeriodicCallback(callback=cleanup, callback_time=36 * 10 ** 5).start()
