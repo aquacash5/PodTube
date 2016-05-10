@@ -305,6 +305,27 @@ def make_app():
         (r'/', FileHandler)
     ])
 
+
+def cleanup():
+    global video_links
+    global playlist_feed
+    global channel_feed
+    vid_len = len(video_links)
+    play_len = len(playlist_feed)
+    chan_len = len(channel_feed)
+    video_links = {key: value for key, value in video_links.items() if value['expire'] > datetime.datetime.now()}
+    playlist_feed = {key: value for key, value in playlist_feed.items() if value['expire'] > datetime.datetime.now()}
+    channel_feed = {key: value for key, value in channel_feed.items() if value['expire'] > datetime.datetime.now()}
+    vid_len -= len(video_links)
+    play_len -= len(playlist_feed)
+    chan_len -= len(channel_feed)
+    if vid_len:
+        logging.info('Cleaned %s items from video list', vid_len)
+    if play_len:
+        logging.info('Cleaned %s items from playlist feeds', play_len)
+    if chan_len:
+        logging.info('Cleaned %s items from channel feeds', chan_len)
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('key',
@@ -318,4 +339,5 @@ if __name__ == '__main__':
     key = args.key
     app = make_app()
     app.listen(args.port)
-    ioloop.IOLoop.current().start()
+    ioloop.PeriodicCallback(callback=cleanup, callback_time=36 * 10 ** 5).start()
+    ioloop.IOLoop.instance().start()
