@@ -15,10 +15,11 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s')
 key = None
 video_links = {}
-feed_list = {}
+playlist_feed = {}
+channel_feed = {}
 
 
 def get_youtube_url(video):
@@ -39,6 +40,113 @@ def touch(fname, mode=0o666):
     flags = os.O_CREAT | os.O_APPEND
     with os.fdopen(os.open(fname, flags=flags, mode=mode)):
         pass
+
+
+class ChannelHandler(web.RequestHandler):
+    @gen.coroutine
+    def get(self, channel):
+        logging.info('Channel: %s', channel)
+        channel = channel.split('/')
+        if len(channel) < 2:
+            channel.append('video')
+        channel_name = ['/'.join(channel)]
+        self.add_header('Content-type', 'application/rss+xml')
+        if channel_name[0] in channel_feed and channel_feed[channel_name[0]]['expire'] > datetime.datetime.now():
+            self.write(channel_feed[channel_name[0]]['feed'])
+            self.finish()
+            return
+        payload = {
+            'part': 'snippet,contentDetails',
+            'maxResults': 25,
+            'channelId': channel[0],
+            'key': key
+        }
+        request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+        if request.status_code != 200:
+            payload = {
+                'part': 'snippet',
+                'maxResults': 1,
+                'forUsername': channel[0],
+                'key': key
+            }
+            request = requests.get('https://www.googleapis.com/youtube/v3/channels', params=payload)
+            response = request.json()
+            channel[0] = response['items'][0]['id']
+            channel_name.append('/'.join(channel))
+            payload = {
+                'part': 'snippet,contentDetails',
+                'maxResults': 25,
+                'channelId': channel[0],
+                'key': key
+            }
+            request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+        response = request.json()
+        if request.status_code == 200:
+            logging.debug('Downloaded Playlist Information')
+        else:
+            logging.error('Error Downloading Playlist: %s', request.reason)
+            self.send_error(reason='Error Downloading Playlist')
+            return
+        fg = FeedGenerator()
+        fg.load_extension('podcast')
+        snippet = response['items'][0]['snippet']
+        icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+        fg.title(snippet['title'])
+        fg.id('http://' + self.request.host + self.request.uri)
+        fg.description(snippet['description'] or ' ')
+        fg.author(name=snippet['channelTitle'])
+        fg.image(snippet['thumbnails'][icon]['url'])
+        fg.link(href='https://www.youtube.com/playlist?list=' + channel[0])
+        fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
+        fg.podcast.itunes_summary(snippet['description'])
+        fg.updated(response['items'][0]['snippet']['publishedAt'])
+        video = None
+        for item in response['items']:
+            snippet = item['snippet']
+            if snippet['type'] != 'upload':
+                continue
+            curvideo = item['contentDetails']['upload']['videoId']
+            if not video:
+                video = curvideo
+            logging.debug('PlaylistVideo: %s %s', curvideo, snippet['title'])
+            fe = fg.add_entry()
+            fe.title(snippet['title'])
+            fe.id(curvideo)
+            icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+            fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
+            fe.updated(snippet['publishedAt'])
+            if channel[1] == 'video':
+                fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
+                                                                   vid=curvideo),
+                             type="video/mp4")
+            elif channel[1] == 'audio':
+                fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host,
+                                                                   vid=curvideo),
+                             type="audio/mpeg")
+            fe.author(name=snippet['channelTitle'])
+            fe.podcast.itunes_author(snippet['channelTitle'])
+            fe.podcast.itunes_author(snippet['channelTitle'])
+            fe.pubdate(snippet['publishedAt'])
+            fe.link(href='http://www.youtube.com/watch?v=' + curvideo, title=snippet['title'])
+            fe.podcast.itunes_summary(snippet['description'])
+            fe.description(snippet['description'])
+        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(minutes=120)}
+        for chan in channel_name:
+            channel_feed[chan] = feed
+        self.write(feed['feed'])
+        self.finish()
+        if channel[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
+            touch(video + '.mp3.temp')
+            proc = process.Subprocess(['ffmpeg',
+                                       '-loglevel', 'panic',
+                                       '-y',
+                                       '-i', get_youtube_url(video),
+                                       '-f', 'mp3', video + '.mp3.temp'])
+            try:
+                yield proc.wait_for_exit()
+                os.rename(video + '.mp3.temp', video + '.mp3')
+            except Exception:
+                os.remove(video + '.mp3.temp')
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -191,6 +299,7 @@ class FileHandler(web.RequestHandler):
 def make_app():
     return web.Application([
         (r'/playlist/(.*)', PlaylistHandler),
+        (r'/channel/(.*)', ChannelHandler),
         (r'/video/(.*)', VideoHandler),
         (r'/audio/(.*)', AudioHandler),
         (r'/', FileHandler)
