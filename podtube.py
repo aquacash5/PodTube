@@ -248,7 +248,7 @@ class PlaylistHandler(web.RequestHandler):
 
 class VideoHandler(web.RequestHandler):
     def get(self, video):
-        logging.info('Video: %s'.format(video))
+        logging.info('Video: %s', video)
         self.redirect(get_youtube_url(video))
 
 
