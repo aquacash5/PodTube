@@ -16,7 +16,6 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(message)s', filename='podtube.log', filemode='a')
 key = None
 video_links = {}
 playlist_feed = {}
@@ -332,11 +331,22 @@ if __name__ == '__main__':
     parser.add_argument('key',
                         help='Google\'s API Key')
     parser.add_argument('port',
-                        help='Port Number to listen on',
                         type=int,
                         default=80,
-                        nargs='?')
+                        nargs='?',
+                        help='Port Number to listen on')
+    parser.add_argument('--log-file',
+                        type=str,
+                        default='podtube.log',
+                        metavar='FILE',
+                        help='Location and name of log file')
+    parser.add_argument('--log-format',
+                        type=str,
+                        default='%(asctime)-15s %(message)s',
+                        metavar='FORMAT',
+                        help='Logging format using syntax for python logging module')
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
     for file in glob.glob('*.temp'):
         os.remove(file)
