@@ -43,7 +43,7 @@ def touch(fname, mode=0o666):
 class ChannelHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, channel):
-        logging.info('Channel: %s', channel)
+        logging.info('Channel: %s (%s)', channel, self.request.remote_ip)
         channel = channel.split('/')
         if len(channel) < 2:
             channel.append('video')
@@ -150,7 +150,7 @@ class ChannelHandler(web.RequestHandler):
 class PlaylistHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, playlist):
-        logging.info('Playlist: %s', playlist)
+        logging.info('Playlist: %s (%s)', playlist, self.request.remote_ip)
         playlist = playlist.split('/')
         if len(playlist) < 2:
             playlist.append('video')
@@ -254,7 +254,7 @@ class AudioHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, audio):
         self.closed = False
-        logging.info('Audio: %s', audio)
+        logging.info('Audio: %s (%s)', audio, self.request.remote_ip)
         file = '{}.mp3'.format(audio)
         if os.path.exists(file):
             self.send_file(file)
@@ -290,6 +290,7 @@ class AudioHandler(web.RequestHandler):
 
 class FileHandler(web.RequestHandler):
     def get(self):
+        logging.info('ReadMe (%s)', self.request.remote_ip)
         with open('README.md') as text:
             self.write(misaka.html(text.read(), extensions=['tables']))
 
