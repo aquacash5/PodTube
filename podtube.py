@@ -286,6 +286,7 @@ class AudioHandler(web.RequestHandler):
 
     def on_connection_close(self):
         self.closed = True
+        logging.info('Audio: User quit during transcoding (%s)', self.request.remote_ip)
 
 
 class FileHandler(web.RequestHandler):
