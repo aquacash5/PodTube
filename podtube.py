@@ -301,6 +301,7 @@ def make_app():
         (r'/channel/(.*)', ChannelHandler),
         (r'/video/(.*)', VideoHandler),
         (r'/audio/(.*)', AudioHandler),
+        (r'/(.*)', web.StaticFileHandler, {'path': '.'}),
         (r'/', FileHandler)
     ])
 
