@@ -97,7 +97,7 @@ http://<host>:<port>/channel/<Username>/audio
 
 #### Channels
 
-[http://podtube.aquacash5.com/channel/razethew0rld]([http://podtube.aquacash5.com/channel/razethew0rld])
+[http://podtube.aquacash5.com/channel/razethew0rld](http://podtube.aquacash5.com/channel/razethew0rld)
 
 [http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w)
 
