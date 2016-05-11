@@ -325,6 +325,7 @@ def cleanup():
         logging.info('Cleaned %s items from channel feeds', chan_len)
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     parser = ArgumentParser()
     parser.add_argument('key',
                         help='Google\'s API Key')
