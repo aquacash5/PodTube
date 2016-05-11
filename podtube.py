@@ -132,18 +132,19 @@ class ChannelHandler(web.RequestHandler):
             channel_feed[chan] = feed
         self.write(feed['feed'])
         self.finish()
-        if channel[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
-            touch(video + '.mp3.temp')
+        file = 'audio/{}.mp3'.format(video)
+        if channel[1] == 'audio' and not os.path.exists(file) and not os.path.exists(file + '.temp'):
+            touch(file + '.temp')
             proc = process.Subprocess(['ffmpeg',
                                        '-loglevel', 'panic',
                                        '-y',
                                        '-i', get_youtube_url(video),
-                                       '-f', 'mp3', video + '.mp3.temp'])
+                                       '-f', 'mp3', file + '.temp'])
             try:
                 yield proc.wait_for_exit()
-                os.rename(video + '.mp3.temp', video + '.mp3')
+                os.rename(file + '.temp', file)
             except Exception:
-                os.remove(video + '.mp3.temp')
+                os.remove(file + '.temp')
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -229,18 +230,19 @@ class PlaylistHandler(web.RequestHandler):
         playlist_feed[playlist_name] = feed
         self.write(feed['feed'])
         self.finish()
-        if playlist[1] == 'audio' and not os.path.exists(video + '.mp3') and not os.path.exists(video + '.mp3.temp'):
-            touch(video + '.mp3.temp')
+        file = 'audio/{}.mp3'.format(video)
+        if playlist[1] == 'audio' and not os.path.exists(file) and not os.path.exists(file + '.temp'):
+            touch(file + '.temp')
             proc = process.Subprocess(['ffmpeg',
                                        '-loglevel', 'panic',
                                        '-y',
                                        '-i', get_youtube_url(video),
-                                       '-f', 'mp3', video + '.mp3.temp'])
+                                       '-f', 'mp3', file + '.temp'])
             try:
                 yield proc.wait_for_exit()
-                os.rename(video + '.mp3.temp', video + '.mp3')
+                os.rename(file + '.temp', file)
             except Exception:
-                os.remove(video + '.mp3.temp')
+                os.remove(file + '.temp')
 
 
 class VideoHandler(web.RequestHandler):
@@ -254,7 +256,7 @@ class AudioHandler(web.RequestHandler):
     def get(self, audio):
         self.closed = False
         logging.info('Audio: %s (%s)', audio, self.request.remote_ip)
-        file = '{}.mp3'.format(audio)
+        file = 'audio/{}.mp3'.format(audio)
         if os.path.exists(file):
             self.send_file(file)
             return
