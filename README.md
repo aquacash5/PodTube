@@ -88,20 +88,23 @@ http://<host>:<port>/channel/<Username>/audio
 
 #### Playlists
 
-http://podtube.aquacash5.com/playlist/PL662F41918C22319F
+[http://podtube.aquacash5.com/playlist/PL662F41918C22319F](http://podtube.aquacash5.com/playlist/PL662F41918C22319F)
 
-http://podtube.aquacash5.com/playlist/PL662F41918C22319F/video
+[http://podtube.aquacash5.com/playlist/PL662F41918C22319F/video](http://podtube.aquacash5.com/playlist/PL662F41918C22319F/video)
 
-http://podtube.aquacash5.com/playlist/PL662F41918C22319F/audio
+[http://podtube.aquacash5.com/playlist/PL662F41918C22319F/audio](http://podtube.aquacash5.com/playlist/PL662F41918C22319F/audio)
 
 
 #### Channels
 
-http://podtube.aquacash5.com/channel/razethew0rld
-http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w
+[http://podtube.aquacash5.com/channel/razethew0rld]([http://podtube.aquacash5.com/channel/razethew0rld])
 
-http://podtube.aquacash5.com/channel/razethew0rld/video
-http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/video
+[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w)
 
-http://podtube.aquacash5.com/channel/razethew0rld/audio
-http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio
+[http://podtube.aquacash5.com/channel/razethew0rld/video](http://podtube.aquacash5.com/channel/razethew0rld/video)
+
+[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/video](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/video)
+
+[http://podtube.aquacash5.com/channel/razethew0rld/audio](http://podtube.aquacash5.com/channel/razethew0rld/audio)
+
+[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio)
