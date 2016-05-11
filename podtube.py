@@ -28,10 +28,7 @@ def get_youtube_url(video):
         return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
     vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
-    parts = {}
-    for part in vid.split('?')[-1].split('&'):
-        part = part.split('=')
-        parts[part[0]] = part[1]
+    parts = {part.split('=')[0]: part.split('=')[1] for part in vid.split('?')[-1].split('&')}
     link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
     video_links[video] = link
     return link['url']
