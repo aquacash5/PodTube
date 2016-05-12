@@ -96,6 +96,7 @@ class ChannelHandler(web.RequestHandler):
         fg.link(href='https://www.youtube.com/playlist?list=' + channel[0])
         fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
         fg.podcast.itunes_summary(snippet['description'])
+        fg.podcast.itunes_category('Technology', 'Podcasting')
         fg.updated(response['items'][0]['snippet']['publishedAt'])
         video = None
         for item in response['items']:
