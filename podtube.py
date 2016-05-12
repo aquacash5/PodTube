@@ -185,6 +185,7 @@ class PlaylistHandler(web.RequestHandler):
         fg.link(href='https://www.youtube.com/playlist?list=' + playlist[0])
         fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
         fg.podcast.itunes_summary(snippet['description'])
+        fg.podcast.itunes_category('Technology', 'Podcasting')
         payload = {
             'part': 'snippet',
             'maxResults': 25,
