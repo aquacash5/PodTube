@@ -353,7 +353,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
-    for file in glob.glob('*.temp'):
+    for file in glob.glob('audio/*.temp'):
         os.remove(file)
     app = make_app()
     app.listen(args.port)
