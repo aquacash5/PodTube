@@ -16,6 +16,8 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
+__version__ = '0.9'
+
 key = None
 video_links = {}
 playlist_feed = {}
@@ -350,6 +352,9 @@ if __name__ == '__main__':
                         default='%(asctime)-15s %(message)s',
                         metavar='FORMAT',
                         help='Logging format using syntax for python logging module')
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version="%(prog)s " + __version__)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
