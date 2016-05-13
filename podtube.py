@@ -88,6 +88,7 @@ class ChannelHandler(web.RequestHandler):
             return
         fg = FeedGenerator()
         fg.load_extension('podcast')
+        fg.generator('PodTube', __version__, 'https://github.com/aquacash5/PodTube')
         snippet = response['items'][0]['snippet']
         icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
         fg.title(snippet['title'])
