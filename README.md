@@ -35,7 +35,7 @@ Key  | Description
 -h, --help | show this help message and exit
 --log-file FILE | Location and name of log file
 --log-format FORMAT | Logging format using syntax for python logging module
--V, --version | show program's version number and exit
+-v, --version | show program's version number and exit
 
 ## Usage
 

@@ -355,7 +355,7 @@ if __name__ == '__main__':
                         default='%(asctime)-15s %(message)s',
                         metavar='FORMAT',
                         help='Logging format using syntax for python logging module')
-    parser.add_argument('-V', '--version',
+    parser.add_argument('-v', '--version',
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
