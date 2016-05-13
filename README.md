@@ -1,4 +1,4 @@
-# [PodTube](https://github.com/aquacash5/PodTube) (v 0.9)
+# [PodTube](https://github.com/aquacash5/PodTube) (v0.9)
 
 ## Requirements
 
