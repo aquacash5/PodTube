@@ -29,7 +29,10 @@ def get_youtube_url(video):
     if video in video_links and video_links[video]['expire'] > datetime.datetime.now():
         return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
-    vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
+    try:  # Tries to find the video in 720p
+        vid = yt.get('mp4', '720p').url
+    except Exception:  # Sorts videos by resolution and picks the highest quality video if a 720p video doesn't exist
+        vid = sorted(yt.filter("mp4"), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
     parts = {part.split('=')[0]: part.split('=')[1] for part in vid.split('?')[-1].split('&')}
     link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
     video_links[video] = link
