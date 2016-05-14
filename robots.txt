@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /playlist/
+Disallow: /channel/
+Disallow: /audio/
+Disallow: /video/
