@@ -225,6 +225,8 @@ class PlaylistHandler(web.RequestHandler):
             for item in response['items']:
                 snippet = item['snippet']
                 curvideo = snippet['resourceId']['videoId']
+                if 'Private' in snippet['title']:
+                    continue
                 logging.debug('PlaylistVideo: %s %s', curvideo, snippet['title'])
                 fe = fg.add_entry()
                 fe.title(snippet['title'])
