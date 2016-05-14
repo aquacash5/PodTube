@@ -17,7 +17,7 @@ from pytube import YouTube
 
 from feedgen.feed import FeedGenerator
 
-__version__ = '0.9'
+__version__ = '1.0'
 
 key = None
 video_links = {}
