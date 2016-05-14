@@ -102,6 +102,8 @@ class ChannelHandler(web.RequestHandler):
                 fg.load_extension('podcast')
                 fg.generator('PodTube', __version__, 'https://github.com/aquacash5/PodTube')
                 snippet = response['items'][0]['snippet']
+                if 'Private' in snippet['title']:
+                    continue
                 icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
                 fg.title(snippet['title'])
                 fg.id('http://' + self.request.host + self.request.uri)
