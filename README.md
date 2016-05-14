@@ -1,4 +1,5 @@
 # [PodTube](https://github.com/aquacash5/PodTube) (v1.0)
+This is a python application for converting Youtube playlists and channels into podcast rss feeds.
 
 ## Requirements
 
