@@ -23,6 +23,7 @@ key = None
 video_links = {}
 playlist_feed = {}
 channel_feed = {}
+conversion_queue = {}
 
 
 def get_youtube_url(video):
@@ -152,18 +153,8 @@ class ChannelHandler(web.RequestHandler):
         self.finish()
         video = video['video']
         file = 'audio/{}.mp3'.format(video)
-        if channel[1] == 'audio' and not os.path.exists(file) and not os.path.exists(file + '.temp'):
-            touch(file + '.temp')
-            proc = process.Subprocess(['ffmpeg',
-                                       '-loglevel', 'panic',
-                                       '-y',
-                                       '-i', get_youtube_url(video),
-                                       '-f', 'mp3', file + '.temp'])
-            try:
-                yield proc.wait_for_exit()
-                os.rename(file + '.temp', file)
-            except Exception:
-                os.remove(file + '.temp')
+        if channel[1] == 'audio' and not os.path.exists(file) and video not in conversion_queue.keys():
+            conversion_queue[video] = datetime.datetime.now()
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -263,18 +254,8 @@ class PlaylistHandler(web.RequestHandler):
         self.finish()
         video = video['video']
         file = 'audio/{}.mp3'.format(video)
-        if playlist[1] == 'audio' and not os.path.exists(file) and not os.path.exists(file + '.temp'):
-            touch(file + '.temp')
-            proc = process.Subprocess(['ffmpeg',
-                                       '-loglevel', 'panic',
-                                       '-y',
-                                       '-i', get_youtube_url(video),
-                                       '-f', 'mp3', file + '.temp'])
-            try:
-                yield proc.wait_for_exit()
-                os.rename(file + '.temp', file)
-            except Exception:
-                os.remove(file + '.temp')
+        if playlist[1] == 'audio' and not os.path.exists(file) and video not in conversion_queue.keys():
+            conversion_queue[video] = datetime.datetime.now()
 
 
 class VideoHandler(web.RequestHandler):
@@ -288,24 +269,13 @@ class AudioHandler(web.RequestHandler):
     def get(self, audio):
         self.closed = False
         logging.info('Audio: %s (%s)', audio, self.request.remote_ip)
-        file = 'audio/{}.mp3'.format(audio)
+        file = './audio/{}.mp3'.format(audio)
         if os.path.exists(file):
             self.send_file(file)
             return
-        if not os.path.exists(file + '.temp'):
-            touch(file + '.temp')
-            proc = process.Subprocess(['ffmpeg',
-                                       '-loglevel', 'panic',
-                                       '-y',
-                                       '-i', get_youtube_url(audio),
-                                       '-f', 'mp3', file + '.temp'])
-            try:
-                yield proc.wait_for_exit()
-                os.rename(file + '.temp', file)
-            except Exception:
-                os.remove(file + '.temp')
         else:
-            while os.path.exists(file + '.temp') and not self.closed:
+            conversion_queue[audio] = datetime.datetime.now()
+            while audio in conversion_queue and not self.closed:
                 yield gen.sleep(0.5)
         if self.closed or not os.path.exists(file):
             return
@@ -360,8 +330,29 @@ def cleanup():
     if chan_len:
         logging.info('Cleaned %s items from channel feeds', chan_len)
 
+
+def convert_videos():
+    global conversion_queue
+    while len(conversion_queue):
+        video = sorted(conversion_queue, key=lambda v: conversion_queue[v])[0]
+        logging.info('Converting: %s', video)
+        file = './audio/{}.mp3'.format(video)
+        proc = process.Subprocess(['ffmpeg',
+                                   '-loglevel', 'panic',
+                                   '-y',
+                                   '-i', get_youtube_url(video),
+                                   '-f', 'mp3', file + '.temp'])
+        try:
+            yield proc.wait_for_exit()
+            os.rename(file + '.temp', file)
+        except Exception:
+            os.remove(file + '.temp')
+        del conversion_queue[video]
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    if not os.path.exists('./audio'):
+        os.mkdir('audio')
     parser = ArgumentParser()
     parser.add_argument('key',
                         help='Google\'s API Key')
