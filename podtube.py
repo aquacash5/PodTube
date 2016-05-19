@@ -60,6 +60,7 @@ class ChannelHandler(web.RequestHandler):
             return
         fg = None
         video = None
+        calls = 0
         response = {'nextPageToken': ''}
         while 'nextPageToken' in response.keys():
             nextPage = response['nextPageToken']
@@ -71,6 +72,7 @@ class ChannelHandler(web.RequestHandler):
                 'pageToken': nextPage
             }
             request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+            calls += 1
             if request.status_code != 200:
                 payload = {
                     'part': 'snippet',
@@ -90,6 +92,7 @@ class ChannelHandler(web.RequestHandler):
                     'pageToken': nextPage
                 }
                 request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+                calls += 2
             response = request.json()
             if request.status_code == 200:
                 logging.debug('Downloaded Playlist Information')
@@ -128,12 +131,10 @@ class ChannelHandler(web.RequestHandler):
                 fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
                 fe.updated(snippet['publishedAt'])
                 if channel[1] == 'video':
-                    fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host,
-                                                                       vid=curvideo),
+                    fe.enclosure(url='http://{url}/video/{vid}'.format(url=self.request.host, vid=curvideo),
                                  type="video/mp4")
                 elif channel[1] == 'audio':
-                    fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host,
-                                                                       vid=curvideo),
+                    fe.enclosure(url='http://{url}/audio/{vid}'.format(url=self.request.host, vid=curvideo),
                                  type="audio/mpeg")
                 fe.author(name=snippet['channelTitle'])
                 fe.podcast.itunes_author(snippet['channelTitle'])
@@ -144,7 +145,7 @@ class ChannelHandler(web.RequestHandler):
                 fe.description(snippet['description'])
                 if not video or video['expire'] < fe.pubdate():
                     video = {'video': fe.id(), 'expire': fe.pubdate()}
-        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=6)}
+        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)}
         for chan in channel_name:
             channel_feed[chan] = feed
         self.write(feed['feed'])
@@ -178,12 +179,14 @@ class PlaylistHandler(web.RequestHandler):
             self.write(playlist_feed[playlist_name]['feed'])
             self.finish()
             return
+        calls = 0
         payload = {
             'part': 'snippet',
             'id': playlist[0],
             'key': key
         }
         request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
+        calls += 1
         response = request.json()
         if request.status_code == 200:
             logging.debug('Downloaded Playlist Information')
@@ -217,6 +220,7 @@ class PlaylistHandler(web.RequestHandler):
                 'pageToken': response['nextPageToken']
             }
             request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
+            calls += 1
             response = request.json()
             if request.status_code == 200:
                 logging.debug('Downloaded Playlist Information')
@@ -253,7 +257,7 @@ class PlaylistHandler(web.RequestHandler):
                 fe.description(snippet['description'])
                 if not video or video['expire'] < fe.pubdate():
                     video = {'video': fe.id(), 'expire': fe.pubdate()}
-        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=6)}
+        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)}
         playlist_feed[playlist_name] = feed
         self.write(feed['feed'])
         self.finish()
