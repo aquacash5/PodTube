@@ -281,6 +281,7 @@ class AudioHandler(web.RequestHandler):
             while audio in conversion_queue and not self.closed:
                 yield gen.sleep(0.5)
         if self.closed or not os.path.exists(file):
+            self.send_error(reason='Error Creating Audio')
             return
         self.send_file(file)
 
@@ -337,8 +338,8 @@ def convert_videos():
     global conversion_lock
     global converting_lock
     try:
-        remaining = {key: value for key, value in conversion_queue if not value['status']}
-        video = sorted(remaining, key=lambda v: remaining[v]['added'])[0]
+        remaining = [key for key in conversion_queue.keys() if not conversion_queue[key]['status']]
+        video = sorted(remaining, key=lambda v: conversion_queue[v]['added'])[0]
         conversion_queue[video]['status'] = True
     except Exception:
         return
