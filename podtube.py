@@ -340,6 +340,7 @@ def cleanup():
                 return
 
 
+@gen.coroutine
 def convert_videos():
     global conversion_queue
     while len(conversion_queue):
@@ -356,7 +357,8 @@ def convert_videos():
             os.rename(file + '.temp', file)
         except Exception:
             os.remove(file + '.temp')
-        del conversion_queue[video]
+        finally:
+            del conversion_queue[video]
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
