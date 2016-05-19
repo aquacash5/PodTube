@@ -335,7 +335,6 @@ def cleanup():
 @gen.coroutine
 def convert_videos():
     global conversion_queue
-    global conversion_lock
     global converting_lock
     try:
         remaining = [key for key in conversion_queue.keys() if not conversion_queue[key]['status']]
