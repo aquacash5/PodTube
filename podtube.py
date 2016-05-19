@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 import glob
+import psutil
 import logging
 import requests
 import datetime
@@ -329,6 +330,14 @@ def cleanup():
         logging.info('Cleaned %s items from playlist feeds', play_len)
     if chan_len:
         logging.info('Cleaned %s items from channel feeds', chan_len)
+    size = psutil.disk_usage('./audio')
+    if size.free < 536870912:
+        for f in sorted(glob.glob('./audio/*mp3'), key=lambda file: os.path.getctime(file)):
+            os.remove(f)
+            logging.info('Deleted %s', f)
+            size = psutil.disk_usage('./audio')
+            if size.free > 16106127360:
+                return
 
 
 def convert_videos():
@@ -381,6 +390,6 @@ if __name__ == '__main__':
         os.remove(file)
     app = make_app()
     app.listen(args.port)
-    ioloop.PeriodicCallback(callback=cleanup, callback_time=36 * 10 ** 5).start()
+    ioloop.PeriodicCallback(callback=cleanup, callback_time=1000).start()
     ioloop.PeriodicCallback(callback=convert_videos, callback_time=100).start()
     ioloop.IOLoop.instance().start()
