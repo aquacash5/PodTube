@@ -13,6 +13,7 @@ from tornado import web
 from tornado import gen
 from tornado import ioloop
 from tornado import process
+from tornado.locks import Semaphore
 
 from pytube import YouTube
 
@@ -25,6 +26,7 @@ video_links = {}
 playlist_feed = {}
 channel_feed = {}
 conversion_queue = {}
+converting_lock = Semaphore(2)
 
 
 def get_youtube_url(video):
@@ -155,7 +157,7 @@ class ChannelHandler(web.RequestHandler):
         video = video['video']
         file = 'audio/{}.mp3'.format(video)
         if channel[1] == 'audio' and not os.path.exists(file) and video not in conversion_queue.keys():
-            conversion_queue[video] = datetime.datetime.now()
+            conversion_queue[video] = {'status': False, 'added': datetime.datetime.now()}
 
 
 class PlaylistHandler(web.RequestHandler):
@@ -256,7 +258,7 @@ class PlaylistHandler(web.RequestHandler):
         video = video['video']
         file = 'audio/{}.mp3'.format(video)
         if playlist[1] == 'audio' and not os.path.exists(file) and video not in conversion_queue.keys():
-            conversion_queue[video] = datetime.datetime.now()
+            conversion_queue[video] = {'status': False, 'added': datetime.datetime.now()}
 
 
 class VideoHandler(web.RequestHandler):
@@ -275,7 +277,7 @@ class AudioHandler(web.RequestHandler):
             self.send_file(file)
             return
         else:
-            conversion_queue[audio] = datetime.datetime.now()
+            conversion_queue[audio] = {'status': False, 'added': datetime.datetime.now()}
             while audio in conversion_queue and not self.closed:
                 yield gen.sleep(0.5)
         if self.closed or not os.path.exists(file):
@@ -343,8 +345,15 @@ def cleanup():
 @gen.coroutine
 def convert_videos():
     global conversion_queue
-    while len(conversion_queue):
-        video = sorted(conversion_queue, key=lambda v: conversion_queue[v])[0]
+    global conversion_lock
+    global converting_lock
+    try:
+        remaining = {key: value for key, value in conversion_queue if not value['status']}
+        video = sorted(remaining, key=lambda v: remaining[v]['added'])[0]
+        conversion_queue[video]['status'] = True
+    except Exception:
+        return
+    with (yield converting_lock.acquire()):
         logging.info('Converting: %s', video)
         file = './audio/{}.mp3'.format(video)
         proc = process.Subprocess(['ffmpeg',
@@ -386,12 +395,12 @@ if __name__ == '__main__':
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
+    logging.basicConfig(level=logging.INFO, format=args.log_format, filemode='a')
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
     app = make_app()
     app.listen(args.port)
     ioloop.PeriodicCallback(callback=cleanup, callback_time=1000).start()
-    ioloop.PeriodicCallback(callback=convert_videos, callback_time=100).start()
+    ioloop.PeriodicCallback(callback=convert_videos, callback_time=1000).start()
     ioloop.IOLoop.instance().start()
