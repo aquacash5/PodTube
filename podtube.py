@@ -302,17 +302,6 @@ class FileHandler(web.RequestHandler):
             self.write(misaka.html(text.read(), extensions=['tables']))
 
 
-def make_app():
-    return web.Application([
-        (r'/playlist/(.*)', PlaylistHandler),
-        (r'/channel/(.*)', ChannelHandler),
-        (r'/video/(.*)', VideoHandler),
-        (r'/audio/(.*)', AudioHandler),
-        (r'/', FileHandler),
-        (r'/(.*)', web.StaticFileHandler, {'path': '.'})
-    ])
-
-
 def cleanup():
     global video_links
     global playlist_feed
@@ -369,6 +358,17 @@ def convert_videos():
         finally:
             del conversion_queue[video]
 
+
+def make_app():
+    return web.Application([
+        (r'/playlist/(.*)', PlaylistHandler),
+        (r'/channel/(.*)', ChannelHandler),
+        (r'/video/(.*)', VideoHandler),
+        (r'/audio/(.*)', AudioHandler),
+        (r'/', FileHandler),
+        (r'/(.*)', web.StaticFileHandler, {'path': '.'})
+    ])
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     if not os.path.exists('./audio'):
@@ -395,7 +395,7 @@ if __name__ == '__main__':
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format=args.log_format, filemode='a')
+    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
