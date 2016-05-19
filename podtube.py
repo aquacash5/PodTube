@@ -382,4 +382,5 @@ if __name__ == '__main__':
     app = make_app()
     app.listen(args.port)
     ioloop.PeriodicCallback(callback=cleanup, callback_time=36 * 10 ** 5).start()
+    ioloop.PeriodicCallback(callback=convert_videos, callback_time=100).start()
     ioloop.IOLoop.instance().start()
