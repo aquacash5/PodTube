@@ -277,7 +277,7 @@ class AudioHandler(web.RequestHandler):
             self.send_file(file)
             return
         else:
-            if audio in conversion_queue.keys():
+            if audio not in conversion_queue.keys():
                 conversion_queue[audio] = {'status': False, 'added': datetime.datetime.now()}
             while audio in conversion_queue and not self.closed:
                 yield gen.sleep(0.5)
