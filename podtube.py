@@ -374,7 +374,7 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     if not os.path.exists('./audio'):
         os.mkdir('audio')
-    parser = ArgumentParser()
+    parser = ArgumentParser(prog='PodTube')
     parser.add_argument('key',
                         help='Google\'s API Key')
     parser.add_argument('port',
