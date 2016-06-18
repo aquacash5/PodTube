@@ -43,12 +43,6 @@ def get_youtube_url(video):
     return link['url']
 
 
-def touch(fname, mode=0o666):
-    flags = os.O_CREAT | os.O_APPEND
-    with os.fdopen(os.open(fname, flags=flags, mode=mode)):
-        pass
-
-
 class ChannelHandler(web.RequestHandler):
     @gen.coroutine
     def get(self, channel):
