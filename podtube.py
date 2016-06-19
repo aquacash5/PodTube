@@ -14,6 +14,7 @@ from tornado import gen
 from tornado import ioloop
 from tornado import process
 from tornado.locks import Semaphore
+from tornado import iostream
 
 from pytube import YouTube
 
@@ -280,11 +281,20 @@ class AudioHandler(web.RequestHandler):
             return
         self.send_file(file)
 
+    @gen.coroutine
     def send_file(self, file):
         self.add_header('Content-Type', 'audio/mpeg')
         self.add_header('Content-Length', os.stat(file).st_size)
-        with open(file, 'rb') as f:
-            self.write(f.read())
+        with open(file, "rb") as f:
+            chunk_size = 64 * 1024
+            while True:
+                chunk = f.read(chunk_size)
+                if chunk:
+                    try:
+                        self.write(chunk)
+                        yield self.flush()
+                    except iostream.StreamClosedError:
+                        return
 
     def on_connection_close(self):
         self.closed = True
@@ -390,7 +400,7 @@ if __name__ == '__main__':
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
+    logging.basicConfig(level=logging.DEBUG, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
