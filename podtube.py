@@ -262,42 +262,22 @@ class VideoHandler(web.RequestHandler):
         self.redirect(get_youtube_url(video))
 
 
-class AudioHandler(web.RequestHandler):
+class AudioHandler(web.StaticFileHandler):
     @gen.coroutine
-    def get(self, audio):
-        self.closed = False
+    def get(self, audio, include_body=True):
         logging.info('Audio: %s (%s)', audio, self.request.remote_ip)
         file = './audio/{}.mp3'.format(audio)
         if os.path.exists(file):
-            self.send_file(file)
+            super(AudioHandler, self).get(file, include_body=include_body)
             return
         else:
             if audio not in conversion_queue.keys():
                 conversion_queue[audio] = {'status': False, 'added': datetime.datetime.now()}
-            while audio in conversion_queue and not self.closed:
+            while audio in conversion_queue:
                 yield gen.sleep(0.5)
-        if self.closed or not os.path.exists(file):
-            self.send_error(reason='Error Creating Audio')
-            return
-        self.send_file(file)
-
-    @gen.coroutine
-    def send_file(self, file):
-        self.add_header('Content-Type', 'audio/mpeg')
-        self.add_header('Content-Length', os.stat(file).st_size)
-        with open(file, "rb") as f:
-            chunk_size = 64 * 1024
-            while True:
-                chunk = f.read(chunk_size)
-                if chunk:
-                    try:
-                        self.write(chunk)
-                        yield self.flush()
-                    except iostream.StreamClosedError:
-                        return
+        super(AudioHandler, self).get(file, include_body=include_body)
 
     def on_connection_close(self):
-        self.closed = True
         logging.info('Audio: User quit during transcoding (%s)', self.request.remote_ip)
 
 
@@ -369,7 +349,7 @@ def make_app():
         (r'/playlist/(.*)', PlaylistHandler),
         (r'/channel/(.*)', ChannelHandler),
         (r'/video/(.*)', VideoHandler),
-        (r'/audio/(.*)', AudioHandler),
+        (r'/audio/(.*)', AudioHandler, {'path': '.'}),
         (r'/', FileHandler),
         (r'/(.*)', web.StaticFileHandler, {'path': '.'})
     ])
