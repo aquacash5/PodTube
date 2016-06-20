@@ -395,7 +395,7 @@ if __name__ == '__main__':
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG, format=args.log_format, filename=args.log_file, filemode='a')
+    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
