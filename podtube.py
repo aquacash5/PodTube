@@ -14,7 +14,6 @@ from tornado import gen
 from tornado import ioloop
 from tornado import process
 from tornado.locks import Semaphore
-from tornado import iostream
 
 from pytube import YouTube
 
@@ -267,15 +266,31 @@ class AudioHandler(web.RequestHandler):
     def get(self, audio):
         logging.info('Audio: %s (%s)', audio, self.request.remote_ip)
         file = './audio/{}.mp3'.format(audio)
+        self.add_header('Content-Type', 'audio/mpeg')
         if os.path.exists(file):
-            self.redirect('http://{url}/mp3/{audio}.mp3'.format(url=self.request.host, audio=audio))
-            return
+            self.add_header('Content-Length', os.stat(file).st_size)
+            with open(file, 'rb') as f:
+                while True:
+                    chunk = f.read(1024 ** 2)
+                    if chunk:
+                        self.write(chunk)
+                        yield self.flush()
+                    else:
+                        return
         else:
             if audio not in conversion_queue.keys():
                 conversion_queue[audio] = {'status': False, 'added': datetime.datetime.now()}
             while audio in conversion_queue:
                 yield gen.sleep(0.5)
-        self.redirect('http://{url}/mp3/{audio}.mp3'.format(url=self.request.host, audio=audio))
+        self.add_header('Content-Length', os.stat(file).st_size)
+        with(file, 'rb') as f:
+            while True:
+                chunk = f.read(1024 ** 2)
+                if chunk:
+                    self.write(chunk)
+                    yield self.flush()
+                else:
+                    return
 
     def on_connection_close(self):
         logging.info('Audio: User quit during transcoding (%s)', self.request.remote_ip)
@@ -351,8 +366,7 @@ def make_app():
         (r'/video/(.*)', VideoHandler),
         (r'/audio/(.*)', AudioHandler),
         (r'/', FileHandler),
-        (r'/(.*)', web.StaticFileHandler, {'path': '.'}),
-        (r'/mp3/(.*)', web.StaticFileHandler, {'path': './audio'})
+        (r'/(.*)', web.StaticFileHandler, {'path': '.'})
     ])
 
 if __name__ == '__main__':
@@ -381,7 +395,7 @@ if __name__ == '__main__':
                         action='version',
                         version="%(prog)s " + __version__)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG, format=args.log_format, filename=args.log_file, filemode='a')
+    logging.basicConfig(level=logging.DEBUG, format=args.log_format)  # , filename=args.log_file, filemode='a')
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
