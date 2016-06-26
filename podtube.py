@@ -270,7 +270,7 @@ class AudioHandler(web.RequestHandler):
                 yield gen.sleep(0.5)
         self.add_header('Content-Type', 'audio/mpeg')
         self.add_header('Content-Length', os.stat(file).st_size)
-        with(file, 'rb') as f:
+        with open(file, 'rb') as f:
             while True:
                 chunk = f.read(1024 ** 2)
                 if chunk:
