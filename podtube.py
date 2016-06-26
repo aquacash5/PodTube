@@ -287,7 +287,7 @@ class FileHandler(web.RequestHandler):
     def get(self):
         logging.info('ReadMe (%s)', self.request.remote_ip)
         with open('README.md') as text:
-            self.write(misaka.html(text.read(), extensions=['tables']))
+            self.write(misaka.html(text.read(), extensions=('tables', 'fenced-code')))
 
 
 def cleanup():
