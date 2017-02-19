@@ -1,15 +1,17 @@
-# [PodTube](https://github.com/aquacash5/PodTube) (v1.0)
+# [PodTube](https://github.com/aquacash5/PodTube) (v2.0)
 
 This is a python application for converting Youtube playlists and channels into podcast rss feeds.
+
+### [LICENSE](https://github.com/aquacash5/podtube/blob/master/LICENSE)
 
 ## Requirements
 
 #### Python
 
-- [tornado](https://pypi.python.org/pypi/tornado/)
+- [Sanic](https://pypi.python.org/pypi/sanic/)
 - [misaka](https://pypi.python.org/pypi/misaka/)
 - [pytube](https://pypi.python.org/pypi/pytube/)
-- [feedgen](https://pypi.python.org/pypi/feedgen/) (if you can't install lxml for feedgen, use the one on my [GitHub](https://github.com/aquacash5/python-feedgen))
+- [feedgen](https://pypi.python.org/pypi/feedgen/)
 
 #### System
 
@@ -111,17 +113,3 @@ http://<host>:<port>/channel/<Username>/audio
 [http://podtube.aquacash5.com/channel/razethew0rld/audio](http://podtube.aquacash5.com/channel/razethew0rld/audio)
 
 [http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio)
-
-
-## License
-
-Copyright (c) 2016, Kyle Bloom
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
