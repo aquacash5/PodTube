@@ -1,3 +1,4 @@
+# /usr/bin/python3.6
 import logging
 import os
 from asyncio import sleep
@@ -6,6 +7,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from glob import glob
 from subprocess import Popen
+from configparser import ConfigParser
 
 import misaka
 import ujson as json
@@ -19,6 +21,9 @@ from utils import get_youtube_url, get, metric_to_base, get_total_storage
 
 __version__ = '2.0'
 
+CONFIG = ConfigParser()
+CONFIG.read('podtube.ini')
+CONFIG = dict(CONFIG['PodTube'])
 app = Sanic('PodTube')
 log = logging.getLogger('sanic')
 log.setLevel(logging.DEBUG)
@@ -26,7 +31,8 @@ log.setLevel(logging.DEBUG)
 playlist_feed = {}
 channel_feed = {}
 conversion_list = None
-key = ''
+KEY = CONFIG['youtube_key']
+AUDIO_DIRECTORY = CONFIG['audio_directory']
 
 
 @app.get('/channel/<channel_id>')
@@ -45,7 +51,7 @@ async def channel(request, channel_id, return_type='video'):
             'part': 'snippet,contentDetails',
             'maxResults': 50,
             'channelId': channel_id,
-            'key': key,
+            'key': KEY,
             'pageToken': next_page
         }
         response = json.loads(
@@ -57,7 +63,7 @@ async def channel(request, channel_id, return_type='video'):
                 'part': 'snippet',
                 'maxResults': 1,
                 'forUsername': channel_id,
-                'key': key
+                'key': KEY
             }
             response = json.loads(
                 await get('https://www.googleapis.com/youtube/v3/channels', params=payload)
@@ -68,7 +74,7 @@ async def channel(request, channel_id, return_type='video'):
                 'part': 'snippet,contentDetails',
                 'maxResults': 50,
                 'channelId': channel_id,
-                'key': key,
+                'key': KEY,
                 'pageToken': next_page
             }
             response = json.loads(
@@ -138,7 +144,7 @@ async def playlist(request, playlist_id, return_type='video'):
     payload = {
         'part': 'snippet',
         'id': playlist_id,
-        'key': key
+        'key': KEY
     }
     log.debug('Downloaded Playlist Information')
     response = json.loads(
@@ -166,7 +172,7 @@ async def playlist(request, playlist_id, return_type='video'):
             'part': 'snippet',
             'maxResults': 50,
             'playlistId': playlist_id,
-            'key': key,
+            'key': KEY,
             'pageToken': response['nextPageToken']
         }
         response = json.loads(
@@ -222,12 +228,14 @@ async def video(request, video_id):
 @app.head('/audio/<audio_id>')
 async def audio(request, audio_id):
     global conversion_list
+    global AUDIO_DIRECTORY
     log.info(f'Audio HEAD request {audio_id}')
-    if not os.path.exists(f'./audio/{audio_id}.mp3'):
-        conversion_list.put_nowait(audio_id)
+    mp3_file = os.path.join(AUDIO_DIRECTORY, f'{audio_id}.mp3')
     headers = {'Accept-Ranges': 'bytes'}
-    if os.path.exists(f'./audio/{audio_id}.mp3'):
-        headers['Content-Length'] = os.stat(f'./audio/{audio_id}.mp3').st_size
+    if not os.path.exists(mp3_file):
+        conversion_list.put_nowait(audio_id)
+    else:
+        headers['Content-Length'] = os.stat(mp3_file).st_size
     return HTTPResponse(
         headers=headers,
         content_type='audio/mpeg')
@@ -236,8 +244,9 @@ async def audio(request, audio_id):
 @app.get('/audio/<audio_id>')
 async def audio(request, audio_id):
     global conversion_list
+    global AUDIO_DIRECTORY
     log.info(f'Audio GET request {audio_id}')
-    mp3_file = f'./audio/{audio_id}.mp3'
+    mp3_file = os.path.join(AUDIO_DIRECTORY, f'{audio_id}.mp3')
     headers = {
         'Content-Type': 'audio/mpeg',
         'Content-Disposition': f'attachment; filename="{audio_id}.mp3"'
@@ -254,15 +263,18 @@ async def audio(request, audio_id):
 
 @app.add_task
 async def cleanup():
+    global AUDIO_DIRECTORY
+    max_size = metric_to_base(CONFIG['max_storage'])
     while True:
-        size = await get_total_storage('./audio')
-        if size > metric_to_base('700M'):
-            for removable_file in sorted(glob('./audio/*mp3'),
+        size = await get_total_storage(AUDIO_DIRECTORY)
+        log.debug(f'Size: {size}/{max_size}')
+        if size > max_size:
+            for removable_file in sorted(glob(f'{AUDIO_DIRECTORY}/*mp3'),
                                          key=lambda audio_file: os.path.getctime(audio_file)):
                 size -= os.path.getsize(removable_file)
                 os.remove(removable_file)
                 log.info(f'Deleted {removable_file}')
-                if size > metric_to_base('500M'):
+                if size < max_size:
                     break
                 await sleep(.01)
         await sleep(5)
@@ -270,12 +282,13 @@ async def cleanup():
 
 @app.add_task
 async def convert_youtube_video():
+    global AUDIO_DIRECTORY
     global conversion_list
     conversion_list = LifoQueue()
     while True:
         try:
             video_id = await conversion_list.get()
-            mp3_file = f'./audio/{video_id}.mp3'
+            mp3_file = os.path.join(AUDIO_DIRECTORY, f'{video_id}.mp3')
             if any(glob(f'{mp3_file}*')):
                 log.debug(f'{video_id} already exists or is being processed')
                 break
