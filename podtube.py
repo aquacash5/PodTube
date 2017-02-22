@@ -341,6 +341,7 @@ async def robots_txt(request):
 
 
 if __name__ == '__main__':
-    for temp_file in glob('audio/*.temp'):
+    os.makedirs(AUDIO_DIRECTORY, exist_ok=True)
+    for temp_file in glob(os.path.join(AUDIO_DIRECTORY, '*temp')):
         os.remove(temp_file)
     app.run(host='0.0.0.0', port=CONFIG['port'])
