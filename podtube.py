@@ -26,7 +26,7 @@ CONFIG.read('podtube.ini')
 CONFIG = dict(CONFIG['PodTube'])
 app = Sanic('PodTube')
 log = logging.getLogger('sanic')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging._nameToLevel[CONFIG['log_level'].upper()])
 
 playlist_feed = {}
 channel_feed = {}
@@ -340,4 +340,4 @@ async def robots_txt(request):
 if __name__ == '__main__':
     for temp_file in glob('audio/*.temp'):
         os.remove(temp_file)
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=CONFIG['port'])
