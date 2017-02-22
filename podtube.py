@@ -302,12 +302,15 @@ async def convert_youtube_video():
             while process_result is None:
                 await sleep(1)
                 process_result = ffmpeg_process.poll()
+            log.debug(f'{video_id} process result {process_result}')
             if process_result == 0:
                 log.info(f'Converted {video_id}')
                 os.rename(f'{mp3_file}.temp', mp3_file)
             else:
-                log.error(f'{video_id} failed to convert')
-                os.remove(f'{mp3_file}.temp')
+                raise Exception(f'{video_id} failed to convert')
+        except Exception as ex:
+            log.error(ex)
+            os.remove(f'{mp3_file}.temp')
         finally:
             conversion_list.task_done()
 
