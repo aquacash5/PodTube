@@ -288,11 +288,11 @@ async def convert_youtube_video():
     while True:
         video_id = await conversion_list.get()
         mp3_file = os.path.join(AUDIO_DIRECTORY, f'{video_id}.mp3')
+        if any(glob(f'{mp3_file}*')):
+            log.debug(f'{video_id} already exists or is being processed')
+            continue
+        log.info(f'Processing {video_id}')
         try:
-            if any(glob(f'{mp3_file}*')):
-                log.debug(f'{video_id} already exists or is being processed')
-                break
-            log.info(f'Processing {video_id}')
             ffmpeg_process = Popen(['ffmpeg',
                                     '-loglevel', 'panic',
                                     '-y',
@@ -309,13 +309,13 @@ async def convert_youtube_video():
             else:
                 raise Exception(f'{video_id} failed to convert')
         except Exception as ex:
-            log.error(ex)
+            log.error(f'Conversion Error {video_id} - {ex}')
             try:
                 os.remove(f'{mp3_file}.temp')
             except FileNotFoundError:
                 pass
             except Exception as ex2:
-                log.error(ex2)
+                log.error(f'Unexpected error during cleanup {video_id} - {ex2}')
         finally:
             conversion_list.task_done()
 
