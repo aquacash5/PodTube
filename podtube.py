@@ -286,9 +286,9 @@ async def convert_youtube_video():
     global conversion_list
     conversion_list = LifoQueue()
     while True:
+        video_id = await conversion_list.get()
+        mp3_file = os.path.join(AUDIO_DIRECTORY, f'{video_id}.mp3')
         try:
-            video_id = await conversion_list.get()
-            mp3_file = os.path.join(AUDIO_DIRECTORY, f'{video_id}.mp3')
             if any(glob(f'{mp3_file}*')):
                 log.debug(f'{video_id} already exists or is being processed')
                 break
@@ -310,7 +310,12 @@ async def convert_youtube_video():
                 raise Exception(f'{video_id} failed to convert')
         except Exception as ex:
             log.error(ex)
-            os.remove(f'{mp3_file}.temp')
+            try:
+                os.remove(f'{mp3_file}.temp')
+            except FileNotFoundError:
+                pass
+            except Exception as ex2:
+                log.error(ex2)
         finally:
             conversion_list.task_done()
 
