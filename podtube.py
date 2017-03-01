@@ -112,10 +112,10 @@ async def channel(request, channel_id, return_type='video'):
             fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
             fe.updated(snippet['publishedAt'])
             if return_type == 'audio':
-                fe.enclosure(url=f'http://{request.headers["host"]}audio/{current_video}',
+                fe.enclosure(url=f'http://{request.headers["host"]}/audio/{current_video}',
                              type="audio/mpeg")
             else:
-                fe.enclosure(url=f'http://{request.headers["host"]}video/{current_video}',
+                fe.enclosure(url=f'http://{request.headers["host"]}/video/{current_video}',
                              type="video/mp4")
             fe.author(name=snippet['channelTitle'])
             fe.podcast.itunes_author(snippet['channelTitle'])
@@ -193,10 +193,10 @@ async def playlist(request, playlist_id, return_type='video'):
             fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
             fe.updated(snippet['publishedAt'])
             if return_type == 'audio':
-                fe.enclosure(url=f'http://{request.headers["host"]}audio/{current_video}',
+                fe.enclosure(url=f'http://{request.headers["host"]}/audio/{current_video}',
                              type="audio/mpeg")
             else:
-                fe.enclosure(url=f'http://{request.headers["host"]}video/{current_video}',
+                fe.enclosure(url=f'http://{request.headers["host"]}/video/{current_video}',
                              type="video/mp4")
             fe.author(name=snippet['channelTitle'])
             fe.podcast.itunes_author(snippet['channelTitle'])
