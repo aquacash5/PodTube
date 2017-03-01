@@ -15,7 +15,7 @@ from feedgen.feed import FeedGenerator
 from sanic import Sanic
 from sanic.exceptions import InvalidRangeType, HeaderNotFound
 from sanic.handlers import ContentRangeHandler
-from sanic.response import html, file, text, raw, HTTPResponse
+from sanic.response import html, file, text, raw, redirect
 
 from utils import get_youtube_url, get, metric_to_base, get_total_storage
 
@@ -124,6 +124,7 @@ async def channel(request, channel_id, return_type='video'):
             fe.link(href=f'http://www.youtube.com/watch?v={current_video}', title=snippet['title'])
             fe.podcast.itunes_summary(snippet['description'])
             fe.description(snippet['description'])
+            await sleep(0)
     feed = {
         'feed': fg.rss_str(),
         'expire': datetime.now() + timedelta(hours=calls)
@@ -207,6 +208,7 @@ async def playlist(request, playlist_id, return_type='video'):
             )
             fe.podcast.itunes_summary(snippet['description'])
             fe.description(snippet['description'])
+            await sleep(0)
     feed = {
         'feed': fg.rss_str(),
         'expire': datetime.now() + timedelta(hours=calls)
@@ -218,11 +220,7 @@ async def playlist(request, playlist_id, return_type='video'):
 @app.get('/video/<video_id>')
 async def video(request, video_id):
     yt_url = get_youtube_url(video_id)
-    return HTTPResponse(
-        status=302,
-        headers={'Location': yt_url},
-        content_type=yt_url
-    )
+    return redirect(yt_url)
 
 
 @app.head('/audio/<audio_id>')
@@ -236,9 +234,7 @@ async def audio(request, audio_id):
         conversion_list.put_nowait(audio_id)
     else:
         headers['Content-Length'] = os.stat(mp3_file).st_size
-    return HTTPResponse(
-        headers=headers,
-        content_type='audio/mpeg')
+    return raw(b'', headers=headers)
 
 
 @app.get('/audio/<audio_id>')
@@ -276,7 +272,7 @@ async def cleanup():
                 log.info(f'Deleted {removable_file}')
                 if size < max_size:
                     break
-                await sleep(.01)
+                await sleep(0)
         await sleep(5)
 
 

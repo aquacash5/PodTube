@@ -49,5 +49,5 @@ async def get_total_storage(directory='.'):
     for root, directories, files in os.walk(directory):
         for file in files:
             total_storage += os.path.getsize(os.path.join(root, file))
-            await sleep(0.01)
+            await sleep(0)
     return total_storage
