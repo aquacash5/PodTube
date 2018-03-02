@@ -93,23 +93,23 @@ http://<host>:<port>/channel/<Username>/audio
 
 #### Playlists
 
-[http://podtube.aquacash5.com/playlist/PL662F41918C22319F](http://podtube.aquacash5.com/playlist/PL662F41918C22319F)
+[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd)
 
-[http://podtube.aquacash5.com/playlist/PL662F41918C22319F/video](http://podtube.aquacash5.com/playlist/PL662F41918C22319F/video)
+[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/video](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/video)
 
-[http://podtube.aquacash5.com/playlist/PL662F41918C22319F/audio](http://podtube.aquacash5.com/playlist/PL662F41918C22319F/audio)
+[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/audio](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/audio)
 
 
 #### Channels
 
-[http://podtube.aquacash5.com/channel/razethew0rld](http://podtube.aquacash5.com/channel/razethew0rld)
+[http://podtube.aquacash5.com/channel/scishow](http://podtube.aquacash5.com/channel/scishow)
 
-[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w)
+[http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow](http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow)
 
-[http://podtube.aquacash5.com/channel/razethew0rld/video](http://podtube.aquacash5.com/channel/razethew0rld/video)
+[http://podtube.aquacash5.com/channel/scishow/video](http://podtube.aquacash5.com/channel/razethew0rld/video)
 
-[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/video](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/video)
+[http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/video](http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/video)
 
-[http://podtube.aquacash5.com/channel/razethew0rld/audio](http://podtube.aquacash5.com/channel/razethew0rld/audio)
+[http://podtube.aquacash5.com/channel/scishow/audio](http://podtube.aquacash5.com/channel/razethew0rld/audio)
 
-[http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio)
+[http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/audio](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio)
