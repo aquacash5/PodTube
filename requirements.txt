@@ -1,6 +1,7 @@
 misaka
-ujson
+psutil
+requests
 feedgen
-sanic
-aiohttp
 pytube
+tornado
+

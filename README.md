@@ -1,4 +1,4 @@
-# [PodTube](https://github.com/aquacash5/PodTube) (v2.0)
+# [PodTube](https://github.com/aquacash5/PodTube) (v3.0)
 
 This is a python application for converting Youtube playlists and channels into podcast rss feeds.
 
@@ -8,10 +8,12 @@ This is a python application for converting Youtube playlists and channels into 
 
 #### Python
 
-- [Sanic](https://pypi.python.org/pypi/sanic/)
+- [tornado](https://pypi.org/project/tornado/)
 - [misaka](https://pypi.python.org/pypi/misaka/)
 - [pytube](https://pypi.python.org/pypi/pytube/)
 - [feedgen](https://pypi.python.org/pypi/feedgen/)
+- [requests](https://pypi.org/project/requests/)
+- [psutil](https://pypi.org/project/psutil/)
 
 #### System
 
@@ -93,11 +95,11 @@ http://<host>:<port>/channel/<Username>/audio
 
 #### Playlists
 
-[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd)
+[http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_](http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_)
 
-[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/video](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/video)
+[http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_/video](http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_/video)
 
-[http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/audio](http://podtube.aquacash5.com/playlist/PL7c1SsGMYus4yyQdtBJHfSIhx4Fd1P6qd/audio)
+[http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_/audio](http://podtube.aquacash5.com/playlist/PLlUk42GiU2guNzWBzxn7hs8MaV7ELLCP_/audio)
 
 
 #### Channels
@@ -106,10 +108,10 @@ http://<host>:<port>/channel/<Username>/audio
 
 [http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow](http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow)
 
-[http://podtube.aquacash5.com/channel/scishow/video](http://podtube.aquacash5.com/channel/razethew0rld/video)
+[http://podtube.aquacash5.com/channel/scishow/video](http://podtube.aquacash5.com/channel/scishow/video)
 
 [http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/video](http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/video)
 
-[http://podtube.aquacash5.com/channel/scishow/audio](http://podtube.aquacash5.com/channel/razethew0rld/audio)
+[http://podtube.aquacash5.com/channel/scishow/audio](http://podtube.aquacash5.com/channel/scishow/audio)
 
-[http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/audio](http://podtube.aquacash5.com/channel/UCOWcZ6Wicl-1N34H0zZe38w/audio)
+[http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/audio](http://podtube.aquacash5.com/channel/UCZYTClx2T1of7BRZ86-8fow/audio)

@@ -118,3 +118,6 @@ ENV/
 
 *.temp
 audio/
+
+.history
+.vscode
