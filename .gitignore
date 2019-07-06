@@ -121,3 +121,7 @@ audio/
 
 .history
 .vscode
+
+.venv
+
+*.lock

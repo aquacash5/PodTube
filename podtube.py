@@ -4,6 +4,7 @@ import glob
 import logging
 import os
 from argparse import ArgumentParser
+from pathlib import Path
 
 import misaka
 import psutil
@@ -13,7 +14,7 @@ from pytube import YouTube
 from tornado import gen, httputil, ioloop, iostream, process, web
 from tornado.locks import Semaphore
 
-__version__ = '3.0'
+__version__ = '1.0'
 
 key = None
 video_links = {}
@@ -27,10 +28,16 @@ def get_youtube_url(video):
     if video in video_links and video_links[video]['expire'] > datetime.datetime.now():
         return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
-    try:  # Tries to find the video in 720p
-        vid = yt.get('mp4', '720p').url
-    except Exception:  # Sorts videos by resolution and picks the highest quality video if a 720p video doesn't exist
-        vid = sorted(yt.filter('mp4'), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
+    vid = yt.streams \
+        .filter(progressive=True, file_extension='mp4') \
+        .order_by('resolution') \
+        .desc() \
+        .first() \
+        .url
+    # try:  # Tries to find the video in 720p
+    #     vid = yt.get('mp4', '720p').url
+    # except Exception:  # Sorts videos by resolution and picks the highest quality video if a 720p video doesn't exist
+    #     vid = sorted(yt.filter('mp4'), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
     parts = {part.split('=')[0]: part.split('=')[1] for part in vid.split('?')[-1].split('&')}
     link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
     video_links[video] = link
@@ -335,6 +342,7 @@ class AudioHandler(web.RequestHandler):
 
         .. versionadded:: 3.1
         """
+        Path(abspath).touch(exist_ok=True)
         with open(abspath, "rb") as audio_file:
             if start is not None:
                 audio_file.seek(start)
@@ -363,8 +371,19 @@ class AudioHandler(web.RequestHandler):
 class FileHandler(web.RequestHandler):
     def get(self):
         logging.info('ReadMe (%s)', self.request.remote_ip)
+        self.write('''
+<html>
+    <head>
+        <title>PodTube (v{}})</title>
+        <link rel="shortcut icon" href="favicon.ico">
+        <link rel="stylesheet" type="text/css" href="markdown.css">
+    </head>
+    <body>'''.format(__version__))
         with open('README.md') as text:
             self.write(misaka.html(text.read(), extensions=('tables', 'fenced-code')))
+        self.write('''
+    </body>
+</html>''')
 
 
 def cleanup():
@@ -423,7 +442,8 @@ def convert_videos():
         try:
             yield ffmpeg_process.wait_for_exit()
             os.rename(audio_file + '.temp', audio_file)
-        except Exception:
+        except Exception as ex:
+            logging.error('Error converting file: %s', ex.reason)
             os.remove(audio_file + '.temp')
         finally:
             del conversion_queue[video]
@@ -446,22 +466,20 @@ if __name__ == '__main__':
         os.mkdir('audio')
     parser = ArgumentParser(prog='PodTube')
     parser.add_argument('key',
-                        type=str,
-                        default=os.getenv('YOUTUBE_API_KEY', '')
                         help='Google\'s API Key')
     parser.add_argument('port',
                         type=int,
-                        default=os.getenv('PODTUBE_PORT', 8080),
+                        default=80,
                         nargs='?',
                         help='Port Number to listen on')
     parser.add_argument('--log-file',
                         type=str,
-                        default=os.getenv('PODTUBE_LOG_FILE', 'podtube.log'),
+                        default='podtube.log',
                         metavar='FILE',
                         help='Location and name of log file')
     parser.add_argument('--log-format',
                         type=str,
-                        default=os.getenv('PODTUBE_LOG_FORMAT', '%(asctime)-15s %(message)s'),
+                        default='%(asctime)-15s %(message)s',
                         metavar='FORMAT',
                         help='Logging format using syntax for python logging module')
     parser.add_argument('-v', '--version',
@@ -477,4 +495,3 @@ if __name__ == '__main__':
     ioloop.PeriodicCallback(callback=cleanup, callback_time=1000).start()
     ioloop.PeriodicCallback(callback=convert_videos, callback_time=1000).start()
     ioloop.IOLoop.instance().start()
-    
