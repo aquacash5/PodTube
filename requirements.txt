@@ -2,6 +2,6 @@ misaka
 psutil
 requests
 feedgen
-pytube
+pytube3
 tornado
 

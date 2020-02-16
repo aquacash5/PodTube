@@ -4,7 +4,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 
 from aiohttp import ClientSession
-from pytube import YouTube as yt
+from pytube import YouTube
 
 video_links = dict()
 metric_chart = {
@@ -32,8 +32,8 @@ def get_resolution(yt_video):
 def get_youtube_url(video_id):
     if video_id in video_links and video_links[video_id]['expire'] > datetime.now():
         return video_links[video_id]['url']
-    yt_video = yt(f'http://www.youtube.com/watch?v={video_id}')
-    video_url = max(yt_video.filter('mp4'), key=get_resolution).url
+    yt_video = YouTube(f'http://www.youtube.com/watch?v={video_id}')
+    video_url = yt_video.streams.get_highest_resolution().url
     parts = {part.split('=')[0]: part.split('=')[1] for part in video_url.split('?')[-1].split('&')}
     link = {'url': video_url, 'expire': datetime.fromtimestamp(int(parts['expire']))}
     video_links[video_id] = link

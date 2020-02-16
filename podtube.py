@@ -28,16 +28,7 @@ def get_youtube_url(video):
     if video in video_links and video_links[video]['expire'] > datetime.datetime.now():
         return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
-    vid = yt.streams \
-        .filter(progressive=True, file_extension='mp4') \
-        .order_by('resolution') \
-        .desc() \
-        .first() \
-        .url
-    # try:  # Tries to find the video in 720p
-    #     vid = yt.get('mp4', '720p').url
-    # except Exception:  # Sorts videos by resolution and picks the highest quality video if a 720p video doesn't exist
-    #     vid = sorted(yt.filter('mp4'), key=lambda video: int(video.resolution[:-1]), reverse=True)[0].url
+    vid = yt.streams.get_highest_resolution().url
     parts = {part.split('=')[0]: part.split('=')[1] for part in vid.split('?')[-1].split('&')}
     link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
     video_links[video] = link
@@ -371,19 +362,12 @@ class AudioHandler(web.RequestHandler):
 class FileHandler(web.RequestHandler):
     def get(self):
         logging.info('ReadMe (%s)', self.request.remote_ip)
-        self.write('''
-<html>
-    <head>
-        <title>PodTube (v{}})</title>
-        <link rel="shortcut icon" href="favicon.ico">
-        <link rel="stylesheet" type="text/css" href="markdown.css">
-    </head>
-    <body>'''.format(__version__))
+        self.write('<html><head><title>PodTube (v')
+        self.write(__version__)
+        self.write(')</title><link rel="shortcut icon" href="favicon.ico"><link rel="stylesheet" type="text/css" href="markdown.css"></head><body>')
         with open('README.md') as text:
             self.write(misaka.html(text.read(), extensions=('tables', 'fenced-code')))
-        self.write('''
-    </body>
-</html>''')
+        self.write('</body></html>')
 
 
 def cleanup():
@@ -492,6 +476,7 @@ if __name__ == '__main__':
         os.remove(file)
     app = make_app()
     app.listen(args.port)
+    logging.info(f'Started listening on {args.port}')
     ioloop.PeriodicCallback(callback=cleanup, callback_time=1000).start()
     ioloop.PeriodicCallback(callback=convert_videos, callback_time=1000).start()
     ioloop.IOLoop.instance().start()
