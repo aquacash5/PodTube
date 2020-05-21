@@ -14,7 +14,7 @@ from pytube import YouTube
 from tornado import gen, httputil, ioloop, iostream, process, web
 from tornado.locks import Semaphore
 
-__version__ = '1.0'
+__version__ = '3.0'
 
 key = None
 video_links = {}
