@@ -29,8 +29,14 @@ def get_youtube_url(video):
         return video_links[video]['url']
     yt = YouTube('http://www.youtube.com/watch?v=' + video)
     vid = yt.streams.get_highest_resolution().url
-    parts = {part.split('=')[0]: part.split('=')[1] for part in vid.split('?')[-1].split('&')}
-    link = {'url': vid, 'expire': datetime.datetime.fromtimestamp(int(parts['expire']))}
+    parts = {
+        part.split('=')[0]: part.split('=')[1]
+        for part in vid.split('?')[-1].split('&')
+    }
+    link = {
+        'url': vid,
+        'expire': datetime.datetime.fromtimestamp(int(parts['expire']))
+    }
     video_links[video] = link
     return link['url']
 
@@ -43,7 +49,6 @@ class ChannelHandler(web.RequestHandler):
 
     @gen.coroutine
     def get(self, channel):
-        logging.info('Channel: %s (%s)', channel, self.request.remote_ip)
         channel = channel.split('/')
         if len(channel) < 2:
             channel.append('video')
@@ -66,7 +71,10 @@ class ChannelHandler(web.RequestHandler):
                 'key': key,
                 'pageToken': next_page
             }
-            request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+            request = requests.get(
+                'https://www.googleapis.com/youtube/v3/activities',
+                params=payload
+            )
             calls += 1
             if request.status_code != 200:
                 payload = {
@@ -75,7 +83,10 @@ class ChannelHandler(web.RequestHandler):
                     'forUsername': channel[0],
                     'key': key
                 }
-                request = requests.get('https://www.googleapis.com/youtube/v3/channels', params=payload)
+                request = requests.get(
+                    'https://www.googleapis.com/youtube/v3/channels',
+                    params=payload
+                )
                 response = request.json()
                 channel[0] = response['items'][0]['id']
                 channel_name.append('/'.join(channel))
@@ -86,19 +97,26 @@ class ChannelHandler(web.RequestHandler):
                     'key': key,
                     'pageToken': next_page
                 }
-                request = requests.get('https://www.googleapis.com/youtube/v3/activities', params=payload)
+                request = requests.get(
+                    'https://www.googleapis.com/youtube/v3/activities',
+                    params=payload
+                )
                 calls += 2
             response = request.json()
             if request.status_code == 200:
-                logging.debug('Downloaded Playlist Information')
+                logging.debug('Downloaded Channel Information')
             else:
-                logging.error('Error Downloading Playlist: %s', request.reason)
-                self.send_error(reason='Error Downloading Playlist')
+                logging.error('Error Downloading Channel: %s', request.reason)
+                self.send_error(reason='Error Downloading Channel')
                 return
             if not fg:
                 fg = FeedGenerator()
                 fg.load_extension('podcast')
-                fg.generator('PodTube (python-feedgen)', __version__, 'https://github.com/aquacash5/PodTube')
+                fg.generator(
+                    'PodTube (python-feedgen)',
+                    __version__,
+                    'https://github.com/aquacash5/PodTube'
+                )
                 for item in response['items']:
                     if item['snippet']['type'] != 'upload':
                         continue
@@ -107,7 +125,15 @@ class ChannelHandler(web.RequestHandler):
                     else:
                         snippet = item['snippet']
                         break
-                icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+                logging.info(
+                    'Channel: %s (%s)',
+                    channel[0],
+                    snippet['channelTitle']
+                )
+                icon = max(
+                    snippet['thumbnails'],
+                    key=lambda x: snippet['thumbnails'][x]['width']
+                )
                 fg.title(snippet['channelTitle'])
                 fg.id('http://' + self.request.host + self.request.uri)
                 fg.description(snippet['description'] or ' ')
@@ -119,11 +145,15 @@ class ChannelHandler(web.RequestHandler):
                 fg.image(snippet['thumbnails'][icon]['url'])
                 fg.link(
                     href=f'http://youtube.com/channel/{channel}',
-                    rel='self')
+                    rel='self'
+                )
                 fg.language('en-US')
                 fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
                 fg.podcast.itunes_explicit('no')
-                fg.podcast.itunes_owner(name='Podtube', email='kylejbloom+podtube@gmail.com')
+                fg.podcast.itunes_owner(
+                    name='Podtube',
+                    email='kylejbloom+podtube@gmail.com'
+                )
                 fg.podcast.itunes_summary(snippet['description'])
                 fg.podcast.itunes_category(cat='Technology')
                 fg.updated(str(datetime.datetime.utcnow()) + 'Z')
@@ -134,28 +164,44 @@ class ChannelHandler(web.RequestHandler):
                 if 'private' in snippet['title'].lower():
                     continue
                 current_video = item['contentDetails']['upload']['videoId']
-                logging.debug('PlaylistVideo: %s %s', current_video, snippet['title'])
+                logging.debug(
+                    'ChannelVideo: %s (%s)',
+                    current_video,
+                    snippet['title']
+                )
                 fe = fg.add_entry()
                 fe.title(snippet['title'])
                 fe.id(current_video)
-                icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+                icon = max(
+                    snippet['thumbnails'],
+                    key=lambda x: snippet['thumbnails'][x]['width'])
                 fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
                 fe.updated(snippet['publishedAt'])
                 if channel[1] == 'video':
-                    fe.enclosure(url=f'http://{self.request.host}/video/{current_video}',
-                                 type="video/mp4")
+                    fe.enclosure(
+                        url=f'http://{self.request.host}/video/{current_video}',
+                        type="video/mp4"
+                    )
                 elif channel[1] == 'audio':
-                    fe.enclosure(url=f'http://{self.request.host}/audio/{current_video}',
-                                 type="audio/mpeg")
+                    fe.enclosure(
+                        url=f'http://{self.request.host}/audio/{current_video}',
+                        type="audio/mpeg"
+                    )
                 fe.author(name=snippet['channelTitle'])
                 fe.podcast.itunes_author(snippet['channelTitle'])
                 fe.pubDate(snippet['publishedAt'])
-                fe.link(href='http://www.youtube.com/watch?v=' + current_video, title=snippet['title'])
+                fe.link(
+                    href=f'http://www.youtube.com/watch?v={current_video}',
+                    title=snippet['title']
+                )
                 fe.podcast.itunes_summary(snippet['description'])
                 fe.description(snippet['description'])
                 if not video or video['expire'] < fe.pubDate():
                     video = {'video': fe.id(), 'expire': fe.pubDate()}
-        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)}
+        feed = {
+            'feed': fg.rss_str(),
+            'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)
+        }
         for chan in channel_name:
             channel_feed[chan] = feed
         self.write(feed['feed'])
@@ -163,18 +209,20 @@ class ChannelHandler(web.RequestHandler):
         video = video['video']
         mp3_file = 'audio/{}.mp3'.format(video)
         if channel[1] == 'audio' and not os.path.exists(mp3_file) and video not in conversion_queue.keys():
-            conversion_queue[video] = {'status': False, 'added': datetime.datetime.now()}
+            conversion_queue[video] = {
+                'status': False,
+                'added': datetime.datetime.now()
+            }
 
 
 class PlaylistHandler(web.RequestHandler):
     @gen.coroutine
-    def head(self, channel):
+    def head(self, playlist):
         self.set_header('Content-type', 'application/rss+xml')
         self.set_header('Accept-Ranges', 'bytes')
 
     @gen.coroutine
     def get(self, playlist):
-        logging.info('Playlist: %s (%s)', playlist, self.request.remote_ip)
         playlist = playlist.split('/')
         if len(playlist) < 2:
             playlist.append('video')
@@ -190,7 +238,10 @@ class PlaylistHandler(web.RequestHandler):
             'id': playlist[0],
             'key': key
         }
-        request = requests.get('https://www.googleapis.com/youtube/v3/playlists', params=payload)
+        request = requests.get(
+            'https://www.googleapis.com/youtube/v3/playlists',
+            params=payload
+        )
         calls += 1
         response = request.json()
         if request.status_code == 200:
@@ -201,25 +252,42 @@ class PlaylistHandler(web.RequestHandler):
             return
         fg = FeedGenerator()
         fg.load_extension('podcast')
-        fg.generator('PodTube (python-feedgen)', __version__, 'https://github.com/aquacash5/PodTube')
+        fg.generator(
+            'PodTube (python-feedgen)',
+            __version__,
+            'https://github.com/aquacash5/PodTube'
+        )
         snippet = response['items'][0]['snippet']
-        icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+        icon = max(
+            snippet['thumbnails'],
+            key=lambda x: snippet['thumbnails'][x]['width']
+        )
+        logging.info(
+            'Playlist: %s (%s)',
+            playlist[0],
+            snippet['title']
+        )
         fg.title(snippet['title'])
         fg.id('http://' + self.request.host + self.request.uri)
         fg.description(snippet['description'] or ' ')
         fg.author(
-                    name='Podtube',
-                    email='kylejbloom+podtube@gmail.com',
-                    uri='https://github.com/aquacash5/PodTube')
+            name='Podtube',
+            email='kylejbloom+podtube@gmail.com',
+            uri='https://github.com/aquacash5/PodTube'
+        )
         fg.podcast.itunes_author(snippet['channelTitle'])
         fg.image(snippet['thumbnails'][icon]['url'])
         fg.link(
             href=f'http://youtube.com/playlist/?list={playlist}',
-            rel='self')
+            rel='self'
+        )
         fg.language('en-US')
         fg.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
         fg.podcast.itunes_explicit('no')
-        fg.podcast.itunes_owner(name='Podtube', email='kylejbloom+podtube@gmail.com')
+        fg.podcast.itunes_owner(
+            name='Podtube',
+            email='kylejbloom+podtube@gmail.com'
+        )
         fg.podcast.itunes_summary(snippet['description'])
         fg.podcast.itunes_category(cat='Technology')
         fg.updated(str(datetime.datetime.utcnow()) + 'Z')
@@ -233,7 +301,10 @@ class PlaylistHandler(web.RequestHandler):
                 'key': key,
                 'pageToken': response['nextPageToken']
             }
-            request = requests.get('https://www.googleapis.com/youtube/v3/playlistItems', params=payload)
+            request = requests.get(
+                'https://www.googleapis.com/youtube/v3/playlistItems',
+                params=payload
+            )
             calls += 1
             response = request.json()
             if request.status_code == 200:
@@ -247,35 +318,55 @@ class PlaylistHandler(web.RequestHandler):
                 current_video = snippet['resourceId']['videoId']
                 if 'Private' in snippet['title']:
                     continue
-                logging.debug('PlaylistVideo: %s %s', current_video, snippet['title'])
+                logging.debug(
+                    'PlaylistVideo: %s (%s)',
+                    current_video,
+                    snippet['title']
+                )
                 fe = fg.add_entry()
                 fe.title(snippet['title'])
                 fe.id(current_video)
-                icon = max(snippet['thumbnails'], key=lambda x: snippet['thumbnails'][x]['width'])
+                icon = max(
+                    snippet['thumbnails'],
+                    key=lambda x: snippet['thumbnails'][x]['width']
+                )
                 fe.podcast.itunes_image(snippet['thumbnails'][icon]['url'])
                 fe.updated(snippet['publishedAt'])
                 if playlist[1] == 'video':
-                    fe.enclosure(url=f'http://{self.request.host}/video/{current_video}',
-                                 type="video/mp4")
+                    fe.enclosure(
+                        url=f'http://{self.request.host}/video/{current_video}',
+                        type="video/mp4"
+                    )
                 elif playlist[1] == 'audio':
-                    fe.enclosure(url=f'http://{self.request.host}/audio/{current_video}',
-                                 type="audio/mpeg")
+                    fe.enclosure(
+                        url=f'http://{self.request.host}/audio/{current_video}',
+                        type="audio/mpeg"
+                    )
                 fe.author(name=snippet['channelTitle'])
                 fe.podcast.itunes_author(snippet['channelTitle'])
                 fe.pubDate(snippet['publishedAt'])
-                fe.link(href='http://www.youtube.com/watch?v=' + current_video, title=snippet['title'])
+                fe.link(
+                    href=f'http://www.youtube.com/watch?v={current_video}',
+                    title=snippet['title']
+                )
                 fe.podcast.itunes_summary(snippet['description'])
                 fe.description(snippet['description'])
                 if not video or video['expire'] < fe.pubDate():
                     video = {'video': fe.id(), 'expire': fe.pubDate()}
-        feed = {'feed': fg.rss_str(), 'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)}
+        feed = {
+            'feed': fg.rss_str(),
+            'expire': datetime.datetime.now() + datetime.timedelta(hours=calls)
+        }
         playlist_feed[playlist_name] = feed
         self.write(feed['feed'])
         self.finish()
         video = video['video']
         mp3_file = 'audio/{}.mp3'.format(video)
         if playlist[1] == 'audio' and not os.path.exists(mp3_file) and video not in conversion_queue.keys():
-            conversion_queue[video] = {'status': False, 'added': datetime.datetime.now()}
+            conversion_queue[video] = {
+                'status': False,
+                'added': datetime.datetime.now()
+            }
 
 
 class VideoHandler(web.RequestHandler):
@@ -296,7 +387,10 @@ class AudioHandler(web.RequestHandler):
         mp3_file = './audio/{}.mp3'.format(audio)
         if not os.path.exists(mp3_file):
             if audio not in conversion_queue.keys():
-                conversion_queue[audio] = {'status': False, 'added': datetime.datetime.now()}
+                conversion_queue[audio] = {
+                    'status': False,
+                    'added': datetime.datetime.now()
+                }
             while audio in conversion_queue:
                 yield gen.sleep(0.5)
         request_range = None
@@ -329,7 +423,10 @@ class AudioHandler(web.RequestHandler):
             # ``Range: bytes=0-``.
             if size != (end or size) - (start or 0):
                 self.set_status(206)  # Partial Content
-                self.set_header("Content-Range", httputil._get_content_range(start, end, size))
+                self.set_header(
+                    "Content-Range",
+                    httputil._get_content_range(start, end, size)
+                )
         else:
             start = end = None
         if start is not None and end is not None:
@@ -392,7 +489,9 @@ class AudioHandler(web.RequestHandler):
                     return
 
     def on_connection_close(self):
-        logging.info('Audio: User quit during transcoding (%s)', self.request.remote_ip)
+        logging.info(
+            'Audio: User quit during transcoding (%s)',
+            self.request.remote_ip)
 
 
 class FileHandler(web.RequestHandler):
@@ -402,7 +501,12 @@ class FileHandler(web.RequestHandler):
         self.write(__version__)
         self.write(')</title><link rel="shortcut icon" href="favicon.ico"><link rel="stylesheet" type="text/css" href="markdown.css"></head><body>')
         with open('README.md') as text:
-            self.write(misaka.html(text.read(), extensions=('tables', 'fenced-code')))
+            self.write(
+                misaka.html(
+                    text.read(),
+                    extensions=('tables', 'fenced-code')
+                )
+            )
         self.write('</body></html>')
 
 
@@ -414,26 +518,47 @@ def cleanup():
     current_time = datetime.datetime.now()
     # Video Links
     video_links_length = len(video_links)
-    video_links = {video: info for video, info in video_links.items() if info['expire'] > current_time}
+    video_links = {
+        video:
+            info
+            for video, info in video_links.items()
+            if info['expire'] > current_time
+    }
     video_links_length -= len(video_links)
     if video_links_length:
         logging.info('Cleaned %s items from video list', video_links_length)
     # Playlist Feeds
     playlist_feed_length = len(playlist_feed)
-    playlist_feed = {playlist: info for playlist, info in playlist_feed.items() if info['expire'] > current_time}
+    playlist_feed = {
+        playlist:
+            info
+            for playlist, info in playlist_feed.items()
+            if info['expire'] > current_time
+    }
     playlist_feed_length -= len(playlist_feed)
     if playlist_feed_length:
-        logging.info('Cleaned %s items from playlist feeds', playlist_feed_length)
+        logging.info(
+            'Cleaned %s items from playlist feeds',
+            playlist_feed_length
+        )
     # Channel Feeds
     channel_feed_length = len(channel_feed)
-    channel_feed = {channel: info for channel, info in channel_feed.items() if info['expire'] > current_time}
+    channel_feed = {
+        channel:
+            info
+            for channel, info in channel_feed.items()
+            if info['expire'] > current_time
+    }
     channel_feed_length -= len(channel_feed)
     if channel_feed_length:
-        logging.info('Cleaned %s items from channel feeds', channel_feed_length)
+        logging.info(
+            'Cleaned %s items from channel feeds',
+            channel_feed_length
+        )
     # Space Check
     size = psutil.disk_usage('./audio')
     if size.free < 536870912:
-        for f in sorted(glob.glob('./audio/*mp3'), key=lambda audio_file: os.path.getctime(audio_file)):
+        for f in sorted(glob.glob('./audio/*mp3'), key=lambda a_file: os.path.getctime(a_file)):
             os.remove(f)
             logging.info('Deleted %s', f)
             size = psutil.disk_usage('./audio')
@@ -446,19 +571,28 @@ def convert_videos():
     global conversion_queue
     global converting_lock
     try:
-        remaining = [key for key in conversion_queue.keys() if not conversion_queue[key]['status']]
-        video = sorted(remaining, key=lambda v: conversion_queue[v]['added'])[0]
+        remaining = [
+            key
+            for key in conversion_queue.keys()
+            if not conversion_queue[key]['status']
+        ]
+        video = sorted(
+            remaining,
+            key=lambda v: conversion_queue[v]['added']
+        )[0]
         conversion_queue[video]['status'] = True
     except Exception:
         return
     with (yield converting_lock.acquire()):
         logging.info('Converting: %s', video)
         audio_file = './audio/{}.mp3'.format(video)
-        ffmpeg_process = process.Subprocess(['ffmpeg',
-                                             '-loglevel', 'panic',
-                                             '-y',
-                                             '-i', get_youtube_url(video),
-                                             '-f', 'mp3', audio_file + '.temp'])
+        ffmpeg_process = process.Subprocess([
+            'ffmpeg',
+            '-loglevel', 'panic',
+            '-y',
+            '-i', get_youtube_url(video),
+            '-f', 'mp3', audio_file + '.temp'
+        ])
         try:
             yield ffmpeg_process.wait_for_exit()
             os.rename(audio_file + '.temp', audio_file)
@@ -485,34 +619,55 @@ if __name__ == '__main__':
     if not os.path.exists('./audio'):
         os.mkdir('audio')
     parser = ArgumentParser(prog='PodTube')
-    parser.add_argument('key',
-                        help='Google\'s API Key')
-    parser.add_argument('port',
-                        type=int,
-                        default=80,
-                        nargs='?',
-                        help='Port Number to listen on')
-    parser.add_argument('--log-file',
-                        type=str,
-                        default='podtube.log',
-                        metavar='FILE',
-                        help='Location and name of log file')
-    parser.add_argument('--log-format',
-                        type=str,
-                        default='%(asctime)-15s %(message)s',
-                        metavar='FORMAT',
-                        help='Logging format using syntax for python logging module')
-    parser.add_argument('-v', '--version',
-                        action='version',
-                        version="%(prog)s " + __version__)
+    parser.add_argument(
+        'key',
+        help='Google\'s API Key'
+    )
+    parser.add_argument(
+        'port',
+        type=int,
+        default=80,
+        nargs='?',
+        help='Port Number to listen on'
+    )
+    parser.add_argument(
+        '--log-file',
+        type=str,
+        default='podtube.log',
+        metavar='FILE',
+        help='Location and name of log file'
+    )
+    parser.add_argument(
+        '--log-format',
+        type=str,
+        default='%(asctime)-15s %(message)s',
+        metavar='FORMAT',
+        help='Logging format using syntax for python logging module'
+    )
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version="%(prog)s " + __version__
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO, format=args.log_format, filename=args.log_file, filemode='a')
+    logging.basicConfig(
+        level=logging.INFO,
+        format=args.log_format,
+        filename=args.log_file,
+        filemode='a'
+    )
     key = args.key
     for file in glob.glob('audio/*.temp'):
         os.remove(file)
     app = make_app()
     app.listen(args.port)
     logging.info(f'Started listening on {args.port}')
-    ioloop.PeriodicCallback(callback=cleanup, callback_time=1000).start()
-    ioloop.PeriodicCallback(callback=convert_videos, callback_time=1000).start()
+    ioloop.PeriodicCallback(
+        callback=cleanup,
+        callback_time=1000
+    ).start()
+    ioloop.PeriodicCallback(
+        callback=convert_videos,
+        callback_time=1000
+    ).start()
     ioloop.IOLoop.instance().start()
