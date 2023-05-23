@@ -1,3 +1,9 @@
+# Archived
+
+This project is now archived. I haven't worked on it for years and
+[amckee](https://github.com/amckee) is pushing forward with new and exciting
+changes on his fork at [https://github.com/amckee/PodTube](https://github.com/amckee/PodTube).
+
 # [PodTube](https://github.com/aquacash5/PodTube) (v3.0)
 
 This is a python application for converting Youtube playlists and channels into podcast rss feeds.
